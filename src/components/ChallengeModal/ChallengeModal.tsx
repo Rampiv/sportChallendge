@@ -29,12 +29,12 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h2 className="modal-title">Add Daily Challenge</h2>
+        <h2 className="modal-title">Добавить ежедневное испытание</h2>
 
         <input
           className="modal-input"
           type="text"
-          placeholder="Challenge title"
+          placeholder="Название испытания"
           value={title}
           onChange={e => setTitle(e.target.value)}
         />
@@ -42,18 +42,18 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
         <input
           className="modal-input"
           type="number"
-          placeholder="Target count"
+          placeholder="Количество"
           value={target}
           onChange={e => setTarget(e.target.value)}
         />
 
         <div className="modal-button-container">
           <button className="modal-button cancel" onClick={onClose}>
-            Cancel
+            Отмена
           </button>
 
           <button className="modal-button add" onClick={handleAdd}>
-            Add
+            Добавить
           </button>
         </div>
       </div>

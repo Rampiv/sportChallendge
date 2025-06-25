@@ -1,3 +1,3 @@
-# meditationAlexandr
+# Sport challendge
 
-ts, redux toolkit
+ts, redux toolkit, firebase

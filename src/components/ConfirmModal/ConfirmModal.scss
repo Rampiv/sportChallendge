@@ -1,0 +1,63 @@
+@use "../../styles/style.scss" as *;
+.confirm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba($black, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.confirm-modal {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 80%;
+
+  &__title {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+
+  &__message {
+    margin-bottom: 20px;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  &__btn {
+    @include standartTransition();
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+
+    &-cancel {
+      background: $color3;
+      color: $black;
+    }
+
+    &-confirm {
+      background: $color6;
+      color: $white;
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        opacity: .5;
+      }
+    }
+    &:active{
+      opacity: 1;
+    }
+  }
+}

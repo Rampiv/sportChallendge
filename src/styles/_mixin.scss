@@ -33,7 +33,7 @@
 @mixin standartBtn() {
   @include btnReset();
   @include standartTransition();
-  border-radius: 15px;
+  border-radius: 5px;
   border: 1px solid $color1;
 
   @media (hover: hover) {

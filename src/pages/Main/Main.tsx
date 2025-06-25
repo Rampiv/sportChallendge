@@ -11,10 +11,17 @@ import { RootState } from "../../app/store"
 import { useAppDispatch, useAppSelector } from "../../app/hooks"
 import { selectCurrentUser } from "../../features/authSlice/authSlice"
 import { Challenge } from "../../utils/types"
-import { ChallengeModal, Loading } from "../../components"
+import {
+  ChallengeModal,
+  ConfirmModal,
+  Loading,
+  Navigation,
+} from "../../components"
 import "./Main.scss"
 import { database } from "../../firebase/config"
 import { get, ref, update } from "firebase/database"
+
+const NavigationMemo = React.memo(Navigation)
 
 export const Main: React.FC = () => {
   const dispatch = useAppDispatch()
@@ -24,6 +31,10 @@ export const Main: React.FC = () => {
   const user = useAppSelector(selectCurrentUser)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false)
+  const [challengeToDelete, setChallengeToDelete] = useState<string | null>(
+    null,
+  )
 
   useEffect(() => {
     const init = async () => {
@@ -41,6 +52,7 @@ export const Main: React.FC = () => {
       }
     }
 
+    // Ежедневный сброс ежедневок
     const checkAndResetDailyChallenges = async () => {
       const today = new Date().toDateString()
       const dailyRef = ref(database, `dailyChallenges/${user?.uid}`)
@@ -123,6 +135,7 @@ export const Main: React.FC = () => {
             type: "daily",
             createdAt: Date.now(),
             lastResetDate: today,
+            countCompleted: 0,
           },
           userId: user.uid,
         }),
@@ -131,15 +144,15 @@ export const Main: React.FC = () => {
     }
   }
 
-  const handleDeleteChallenge = (id: string) => {
-    if (user?.uid) {
-      dispatch(deleteDailyChallenge({ id, userId: user.uid }))
-    }
-  }
-
   const handleIncrementProgress = (id: string, isDaily: boolean) => {
     if (user?.uid) {
-      dispatch(incrementChallengeProgress({ id, userId: user.uid, isDaily }))
+      dispatch(
+        incrementChallengeProgress({
+          id,
+          userId: user.uid,
+          isDaily,
+        }),
+      )
     }
   }
 
@@ -160,7 +173,7 @@ export const Main: React.FC = () => {
           </button>
           <button
             className="challenges__item-btn challenges__item-btn_delete"
-            onClick={() => handleDeleteChallenge(item.id)}
+            onClick={() => handleDeleteClick(item.id)}
           >
             Удалить
           </button>
@@ -168,6 +181,26 @@ export const Main: React.FC = () => {
       )}
     </>
   )
+
+  const handleDeleteClick = (id: string) => {
+    setChallengeToDelete(id)
+    setConfirmModalVisible(true)
+  }
+
+  const handleConfirmDelete = () => {
+    if (user?.uid && challengeToDelete) {
+      dispatch(
+        deleteDailyChallenge({ id: challengeToDelete, userId: user.uid }),
+      )
+    }
+    setConfirmModalVisible(false)
+    setChallengeToDelete(null)
+  }
+
+  const handleCancelDelete = () => {
+    setConfirmModalVisible(false)
+    setChallengeToDelete(null)
+  }
 
   if (error) {
     return <div className="error-message">Error: {error}</div>
@@ -178,57 +211,74 @@ export const Main: React.FC = () => {
   }
 
   return (
-    <section className="challenges">
-      <div className="container">
-        <div className="challenges__content">
-          <h2 className="challenges__h2">Еженедельные испытания</h2>
-          <ul className="challenges__list">
-            {weeklyChallenges.length > 0 ? (
-              weeklyChallenges.map(item => (
-                <li key={item.id} className="challenges__item">
-                  {renderChallengeItem(item)}
-                </li>
-              ))
-            ) : (
-              <span className="challenges__void">
-                Нет доступных еженедельных испытаний или они еще не загрузились
-              </span>
+    <>
+      <section className="challenges">
+        <div className="container">
+          <div className="challenges__content">
+            <h2 className="challenges__h2">Еженедельные испытания</h2>
+            <ul className="challenges__list challenges__list_weekly">
+              {weeklyChallenges.length > 0 ? (
+                weeklyChallenges.map(item => (
+                  <li key={item.id} className="challenges__item">
+                    {renderChallengeItem(item)}
+                  </li>
+                ))
+              ) : (
+                <span className="challenges__void">
+                  Нет доступных еженедельных испытаний или они еще не
+                  загрузились
+                </span>
+              )}
+            </ul>
+
+            {user && (
+              <>
+                <h2 className="challenges__h2">Твои дневные испытаения</h2>
+                <button
+                  className="challenges__btn-add"
+                  onClick={() => setIsModalVisible(true)}
+                >
+                  Добавить ежедневое испытание
+                </button>
+                <ul className="challenges__list">
+                  {dailyChallenges.length > 0 ? (
+                    dailyChallenges.map(item => (
+                      <li key={item.id} className="challenges__item">
+                        {renderChallengeItem(item)}
+                      </li>
+                    ))
+                  ) : (
+                    <span className="challenges__void">
+                      Ежедневные испытания еще не добавлены или они еще не
+                      загрузились
+                    </span>
+                  )}
+                </ul>
+              </>
             )}
-          </ul>
+          </div>
 
-          {user && (
-            <>
-              <h2 className="challenges__h2">Твои дневные испытаения</h2>
-              <button
-                className="challenges__btn-add"
-                onClick={() => setIsModalVisible(true)}
-              >
-                Добавить ежедневое испытание
-              </button>
-              <ul className="challenges__list">
-                {dailyChallenges.length > 0 ? (
-                  dailyChallenges.map(item => (
-                    <li key={item.id} className="challenges__item">
-                      {renderChallengeItem(item)}
-                    </li>
-                  ))
-                ) : (
-                  <span className="challenges__void">
-                    Ежедневные испытания еще не добавлены или они еще не
-                    загрузились
-                  </span>
-                )}
-              </ul>
-            </>
-          )}
+          <ChallengeModal
+            visible={isModalVisible}
+            onClose={() => setIsModalVisible(false)}
+            onAdd={handleAddChallenge}
+          />
+          <ConfirmModal
+            visible={confirmModalVisible}
+            onConfirm={handleConfirmDelete}
+            onCancel={handleCancelDelete}
+            title="Подтверждение удаления"
+            message="Вы уверены, что хотите удалить этот челлендж?"
+          />
         </div>
-
-        <ChallengeModal
-          visible={isModalVisible}
-          onClose={() => setIsModalVisible(false)}
-          onAdd={handleAddChallenge}
-        />
-      </div>
-    </section>
+      </section>
+      <NavigationMemo
+        props={[
+          { text: "Рейтинг", href: "/rating" },
+          { text: "Аккаунт", href: "#" },
+          { text: "Инструкции", href: "#" },
+        ]}
+      />
+    </>
   )
 }

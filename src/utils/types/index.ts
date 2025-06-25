@@ -41,6 +41,8 @@ export type Challenge = {
   userId?: string // только для daily challenges
   createdAt: number
   lastResetDate?: string
+  countCompleted: number
+
 }
 
 export type ChallengesState = {

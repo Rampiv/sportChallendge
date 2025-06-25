@@ -1,0 +1,29 @@
+@use "../../styles/style.scss" as *;
+
+.navigation {
+  padding: 20px 0;
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 0);
+  &__list {
+    @include listReset();
+    @include flexible();
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  &__item {
+    min-width: 130px;
+  }
+
+  &__link {
+    @include standartBtn();
+    display: block;
+    padding: 10px;
+
+    text-align: center;
+    box-shadow: 0px 0px 5px $color1;
+  }
+}
