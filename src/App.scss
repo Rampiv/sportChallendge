@@ -1,0 +1,95 @@
+@use "./styles/style.scss" as *;
+/* Global selectors */
+html {
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+*,
+*::after,
+*::before {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  font-family: "MontserratAlternates", Helvetica, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+img {
+  max-width: 100%;
+}
+body {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+@font-face {
+  font-family: "MontserratAlternates";
+  src: url("./assets/fonts/MontserratAlternates-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MontserratAlternates";
+  src: url("./assets/fonts/MontserratAlternates-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MontserratAlternates";
+  src: url("./assets/fonts/MontserratAlternates-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Global class*/
+.container {
+  max-width: 1920px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.main {
+  position: relative;
+}
+.hide {
+  display: none;
+}
+.visible {
+  display: flex;
+}
+.opacity {
+  opacity: 1;
+}
+
+section {
+  padding: 20px;
+  height: 100vh;
+}
+h1 {
+  display: none;
+}
+.App {
+  overflow: hidden;
+  position: relative;
+
+  @media (max-width: 320px) {
+    & {
+      width: 320px;
+    }
+  }
+}

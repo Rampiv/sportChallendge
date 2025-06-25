@@ -1,0 +1,53 @@
+@use "variables" as *;
+
+@mixin flexible() {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@mixin listReset() {
+  margin-top: 0;
+  margin-bottom: 0;
+  list-style: none;
+  padding-left: 0;
+}
+
+@mixin textReset() {
+  margin: 0;
+  padding: 0;
+}
+
+@mixin btnReset() {
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+@mixin standartTransition() {
+  transition: all ease-out 0.3s;
+}
+
+@mixin standartBtn() {
+  @include btnReset();
+  @include standartTransition();
+  border-radius: 15px;
+  border: 1px solid $color1;
+
+  @media (hover: hover) {
+    &:hover {
+      background-color: $color1;
+      color: $white;
+    }
+    &:focus {
+      outline: 1px double $color1;
+    }
+
+    &:active {
+      background-color: $color2;
+      color: $white;
+    }
+  }
+}
