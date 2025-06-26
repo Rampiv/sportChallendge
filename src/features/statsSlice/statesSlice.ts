@@ -27,62 +27,58 @@ export const fetchUserRankings = createAsyncThunk(
   "stats/fetchUserRankings",
   async (_, { rejectWithValue }) => {
     try {
-      // 1. Получаем всех пользователей
+      // 1. Получаем данные пользователей
       const usersSnapshot = await get(ref(database, "users"))
-      if (!usersSnapshot.exists()) {
-        console.log("No users found in database")
-        return []
-      }
+      const users = usersSnapshot.exists() ? usersSnapshot.val() : {}
 
-      const users = usersSnapshot.val()
-      const userRankings: UserRanking[] = []
-
-      // 2. Получаем все daily challenges
+      // 2. Получаем данные daily challenges
       const dailyChallengesSnapshot = await get(
         ref(database, "dailyChallenges"),
       )
-      const dailyChallengesData = dailyChallengesSnapshot.exists()
+      const dailyChallenges = dailyChallengesSnapshot.exists()
         ? dailyChallengesSnapshot.val()
         : {}
 
-      // 3. Получаем все weekly challenges
-      const weeklyChallengesSnapshot = await get(
-        ref(database, "weeklyChallenges"),
-      )
-      const weeklyCompletedCount = weeklyChallengesSnapshot.exists()
-        ? Object.values(weeklyChallengesSnapshot.val()).filter(
-            (challenge: any) => challenge.isCompleted,
-          ).length
-        : 0
+      // 3. Создаем массив для рейтинга
+      const rankings: UserRanking[] = []
 
-      // 4. Для каждого пользователя считаем выполненные челленджи
-      for (const userId in users) {
-        const user = users[userId]
-        let completedCount = 0
+      // 4. Обрабатываем каждого пользователя из dailyChallenges
+      for (const userId in dailyChallenges) {
+        const challenges = dailyChallenges[userId]
+        let completed = 0
 
-        // Daily challenges пользователя
-        if (dailyChallengesData[userId]) {
-          completedCount += Object.values(dailyChallengesData[userId]).filter(
-            (challenge: any) => challenge.isCompleted,
-          ).length
+        // Считаем выполненные челленджи
+        for (const challengeId in challenges) {
+          if (challenges[challengeId].isCompleted) {
+            completed++
+          }
         }
 
-        // Добавляем completed weekly challenges
-        completedCount += weeklyCompletedCount
+        // Получаем имя пользователя
+        let userName = `User Anonim`
 
-        userRankings.push({
+        // Проверяем наличие пользователя в базе
+        if (users[userId]) {
+          // Проверяем разные варианты имени
+          userName = users[userId].displayName
+        }
+
+        rankings.push({
           userId,
-          userName: user.displayName || `User ${userId.slice(0, 6)}`,
-          completedChallenges: completedCount,
+          userName,
+          completedChallenges: completed,
+          rank: 0, // Временное значение, будет обновлено после сортировки
         })
       }
 
-      // 5. Сортируем и добавляем ранги
-      const sortedRankings = userRankings
-        .sort((a, b) => b.completedChallenges - a.completedChallenges)
-        .map((user, index) => ({ ...user, rank: index + 1 }))
+      // 5. Сортируем по количеству выполненных заданий
+      rankings.sort((a, b) => b.completedChallenges - a.completedChallenges)
 
-      return sortedRankings
+      // 6. Добавляем правильные ранги
+      return rankings.map((user, index) => ({
+        ...user,
+        rank: index + 1,
+      }))
     } catch (error) {
       console.error("Error fetching rankings:", error)
       return rejectWithValue("Failed to fetch user rankings")

@@ -117,7 +117,7 @@ export const updateUserProfile = createAsyncThunk(
   "auth/updateProfile",
   async (displayName: string) => {
     const user = auth.currentUser
-    console.log(auth)
+
     if (!user) throw new Error("User not authenticated")
 
     await updateProfile(user, { displayName })

@@ -35,20 +35,19 @@ export const fetchWeeklyChallenges = createAsyncThunk(
 export const fetchDailyChallenges = createAsyncThunk(
   "challenges/fetchDaily",
   async (userId: string) => {
+    if (!userId) return []
+
     const challengesRef = ref(database, `dailyChallenges/${userId}`)
-    return new Promise<Challenge[]>(resolve => {
-      onValue(challengesRef, snapshot => {
-        const data = snapshot.val()
-        const challenges = data
-          ? Object.keys(data).map(key => ({
-              ...data[key],
-              id: key,
-              userId,
-            }))
-          : []
-        resolve(challenges)
-      })
-    })
+    const snapshot = await get(challengesRef)
+
+    if (!snapshot.exists()) return []
+
+    const data = snapshot.val()
+    return Object.keys(data).map(key => ({
+      ...data[key],
+      id: key,
+      userId,
+    }))
   },
 )
 
@@ -61,15 +60,28 @@ export const addDailyChallenge = createAsyncThunk(
     challenge: Omit<Challenge, "id">
     userId: string
   }) => {
-    const challengesRef = ref(database, `dailyChallenges/${userId}`)
-    const newChallengeRef = push(challengesRef)
-    await set(newChallengeRef, {
+    if (!userId) {
+      throw new Error("User ID is required")
+    }
+
+    // Ссылка на challenges конкретного пользователя
+    const userChallengesRef = ref(database, `dailyChallenges/${userId}`)
+    const newChallengeRef = push(userChallengesRef)
+
+    const newChallenge = {
       ...challenge,
       createdAt: Date.now(),
       current: 0,
       isCompleted: false,
-    })
-    return { id: newChallengeRef.key, ...challenge }
+      userId, // Добавляем ID пользователя в задание
+    }
+
+    await set(newChallengeRef, newChallenge)
+
+    return {
+      id: newChallengeRef.key,
+      ...newChallenge,
+    }
   },
 )
 
@@ -106,14 +118,16 @@ export const incrementChallengeProgress = createAsyncThunk(
         if (challenge) {
           const updatedCurrent = challenge.current + 1
           const updatedIsCompleted = updatedCurrent >= challenge.target
-          const updatedCountCompleted = updatedIsCompleted ? challenge.countCompleted + 1 : challenge.countCompleted
+          const updatedCountCompleted = updatedIsCompleted
+            ? challenge.countCompleted + 1
+            : challenge.countCompleted
 
           // Обновляем challenge
           await set(challengeRef, {
             ...challenge,
             current: updatedCurrent,
             isCompleted: updatedIsCompleted,
-            countCompleted: updatedCountCompleted
+            countCompleted: updatedCountCompleted,
           })
 
           // Если это daily challenge и он выполнен, увеличиваем ВСЕ weekly challenges
