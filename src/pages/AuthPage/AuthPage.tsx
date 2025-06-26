@@ -16,6 +16,7 @@ export const AuthPage = () => {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [passwordVisible, setPasswordVisible] = useState(false)
+  const [displayName, setDisplayName] = useState("")
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const user = useAppSelector(state => state.auth.user)
@@ -59,7 +60,9 @@ export const AuthPage = () => {
       if (isLogin) {
         result = await dispatch(login({ email, password })).unwrap()
       } else {
-        result = await dispatch(register({ email, password })).unwrap()
+        result = await dispatch(
+          register({ email, password, displayName }),
+        ).unwrap()
       }
 
       // Сохраняем пользователя в localStorage
@@ -69,7 +72,7 @@ export const AuthPage = () => {
     } catch (error) {
       // Ошибки уже обработаны в thunks, но можно добавить доп. логику
       console.error("Auth error:", error)
-      setError('Произошла ошибка. Перезагрузите страницу')
+      setError("Произошла ошибка. Перезагрузите страницу")
     } finally {
       setLoading(false)
     }
@@ -96,9 +99,6 @@ export const AuthPage = () => {
 
           <form className="auth__form" onSubmit={handleSubmit}>
             <div className="auth__credential">
-              <label htmlFor="email" className="auth__credential-label">
-                Email
-              </label>
               <input
                 id="email"
                 name="email"
@@ -112,10 +112,26 @@ export const AuthPage = () => {
                 className="auth__credential-input"
                 placeholder="Email"
               />
+
+              {!isLogin ? (
+                <>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    value={displayName}
+                    onChange={e => {
+                      setDisplayName(e.target.value)
+                    }}
+                    className="auth__credential-input"
+                    placeholder="Имя пользователя"
+                  />
+                </>
+              ) : (
+                <></>
+              )}
               <div className="auth__credential">
-                <label htmlFor="password" className="auth__credential-label">
-                  Пароль
-                </label>
                 <input
                   id="password"
                   name="password"

@@ -1,6 +1,6 @@
 import "./App.scss"
 import { Route, Routes } from "react-router"
-import { AuthPage, Main, RatingPage } from "./pages"
+import { AccountPage, AuthPage, Main, RatingPage } from "./pages"
 import { ProtectedRoute } from "./components"
 
 export const App = () => {
@@ -12,6 +12,8 @@ export const App = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Main />} />
           <Route path="/rating" element={<RatingPage />} />
+          <Route path="/account" element={<AccountPage />} />
+
         </Route>
       </Routes>
     </div>

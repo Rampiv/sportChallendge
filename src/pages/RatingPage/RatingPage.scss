@@ -1,0 +1,13 @@
+@use '../../styles/style.scss' as *;
+
+.rating{
+    &__h2{
+        margin-bottom: 15px;
+        display: block;
+        width: 100%;
+        text-align: center;
+    }
+    &__list{
+        @include listReset();
+    }
+}

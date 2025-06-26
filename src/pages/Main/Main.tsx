@@ -20,6 +20,14 @@ import {
 import "./Main.scss"
 import { database } from "../../firebase/config"
 import { get, ref, update } from "firebase/database"
+import { Rating, UserIcon } from "../../assets/svg"
+import type { CollapseProps } from "antd"
+import { Collapse } from "antd"
+import {
+  fetchActiveUsersCount,
+  selectActiveUsersCount,
+} from "../../features/statsSlice/statesSlice"
+import { updateUserActivity } from "../../utils/services/userActivityService/userActivityService"
 
 const NavigationMemo = React.memo(Navigation)
 
@@ -35,6 +43,7 @@ export const Main: React.FC = () => {
   const [challengeToDelete, setChallengeToDelete] = useState<string | null>(
     null,
   )
+  const activeUsersCount = useAppSelector(selectActiveUsersCount)
 
   useEffect(() => {
     const init = async () => {
@@ -43,6 +52,8 @@ export const Main: React.FC = () => {
         await dispatch(subscribeToChallenges(user?.uid || "")).unwrap()
         // Проверяем и сбрасываем ежедневные челленджи
         if (user?.uid) {
+          await updateUserActivity(user.uid)
+          await dispatch(fetchActiveUsersCount())
           await checkAndResetDailyChallenges()
         }
       } catch (err) {
@@ -122,7 +133,7 @@ export const Main: React.FC = () => {
     }
   }, [dispatch, user?.uid])
 
-  const handleAddChallenge = (title: string, target: number) => {
+  const handleAddChallenge = (title: string, target: number, group: string) => {
     if (user?.uid) {
       const today = new Date().toDateString()
       dispatch(
@@ -136,6 +147,7 @@ export const Main: React.FC = () => {
             createdAt: Date.now(),
             lastResetDate: today,
             countCompleted: 0,
+            group,
           },
           userId: user.uid,
         }),
@@ -182,6 +194,61 @@ export const Main: React.FC = () => {
     </>
   )
 
+  const groupDailyChallenges = (challenges: Challenge[]) => {
+    const grouped: Record<string, Challenge[]> = {}
+    const ungrouped: Challenge[] = []
+
+    challenges.forEach(challenge => {
+      if (challenge.group) {
+        if (!grouped[challenge.group]) {
+          grouped[challenge.group] = []
+        }
+        grouped[challenge.group].push(challenge)
+      } else {
+        ungrouped.push(challenge)
+      }
+    })
+
+    return { grouped, ungrouped }
+  }
+
+  const renderGroupedChallenges = () => {
+    const { grouped, ungrouped } = groupDailyChallenges(dailyChallenges)
+
+    const collapseItems: CollapseProps["items"] = Object.entries(grouped).map(
+      ([groupName, challenges]) => ({
+        key: groupName,
+        label: groupName,
+        children: (
+          <ul className="challenges__list">
+            {challenges.map(item => (
+              <li key={item.id} className="challenges__item">
+                {renderChallengeItem(item)}
+              </li>
+            ))}
+          </ul>
+        ),
+      }),
+    )
+
+    return (
+      <>
+        {Object.keys(grouped).length > 0 && (
+          <Collapse items={collapseItems} className="challenges__collapse" />
+        )}
+        {ungrouped.length > 0 && (
+          <ul className="challenges__list">
+            {ungrouped.map(item => (
+              <li key={item.id} className="challenges__item">
+                {renderChallengeItem(item)}
+              </li>
+            ))}
+          </ul>
+        )}
+      </>
+    )
+  }
+
   const handleDeleteClick = (id: string) => {
     setChallengeToDelete(id)
     setConfirmModalVisible(true)
@@ -212,6 +279,13 @@ export const Main: React.FC = () => {
 
   return (
     <>
+      <NavigationMemo
+        props={[
+          { text: <Rating />, href: "/rating" },
+          { text: <UserIcon />, href: "/account" },
+          { text: "FAQ", href: "#" },
+        ]}
+      />
       <section className="challenges">
         <div className="container">
           <div className="challenges__content">
@@ -230,6 +304,9 @@ export const Main: React.FC = () => {
                 </span>
               )}
             </ul>
+             <span className="challenges__active-users">
+              Активных пользователей сегодня: <strong>{activeUsersCount}</strong>
+            </span>
 
             {user && (
               <>
@@ -240,20 +317,7 @@ export const Main: React.FC = () => {
                 >
                   Добавить ежедневое испытание
                 </button>
-                <ul className="challenges__list">
-                  {dailyChallenges.length > 0 ? (
-                    dailyChallenges.map(item => (
-                      <li key={item.id} className="challenges__item">
-                        {renderChallengeItem(item)}
-                      </li>
-                    ))
-                  ) : (
-                    <span className="challenges__void">
-                      Ежедневные испытания еще не добавлены или они еще не
-                      загрузились
-                    </span>
-                  )}
-                </ul>
+                {renderGroupedChallenges()}
               </>
             )}
           </div>
@@ -272,13 +336,6 @@ export const Main: React.FC = () => {
           />
         </div>
       </section>
-      <NavigationMemo
-        props={[
-          { text: "Рейтинг", href: "/rating" },
-          { text: "Аккаунт", href: "#" },
-          { text: "Инструкции", href: "#" },
-        ]}
-      />
     </>
   )
 }

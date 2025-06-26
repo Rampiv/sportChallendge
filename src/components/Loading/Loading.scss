@@ -1,3 +1,4 @@
+@use "../../styles/style.scss" as *;
 .loading {
   height: 100vh;
 }
@@ -14,8 +15,8 @@
   width: 35px;
   height: 15px;
   border-radius: 8px;
-  background: #ff2cbd;
-  box-shadow: 0 0 10px 0 #fecdff;
+  background: $color6;
+  box-shadow: 0 0 10px 0 rgba($black, 0.5);
 }
 
 .uno {

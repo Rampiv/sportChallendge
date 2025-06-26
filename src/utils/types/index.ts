@@ -42,12 +42,29 @@ export type Challenge = {
   createdAt: number
   lastResetDate?: string
   countCompleted: number
-
+  group?: string
 }
 
 export type ChallengesState = {
   weeklyChallenges: Challenge[]
   dailyChallenges: Challenge[]
+  loading: boolean
+  error: string | null
+}
+
+// рейтинг
+export type UserRanking = {
+  userId: string
+  userName: string
+  completedChallenges: number
+  rank?: number
+}
+
+export interface StatsState {
+  activeUsersCount: number
+  userRankings: UserRanking[]
+  rankingsLoading: boolean
+  rankingsError: string | null
   loading: boolean
   error: string | null
 }

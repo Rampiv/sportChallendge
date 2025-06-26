@@ -1,8 +1,9 @@
 import { Link } from "react-router"
 import "./Navigation.scss"
+import { ReactNode } from "react"
 
 interface Props {
-  text: string
+  text: ReactNode
   href: string
 }
 interface ArrayProps {

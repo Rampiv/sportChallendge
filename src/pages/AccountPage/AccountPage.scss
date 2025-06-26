@@ -1,0 +1,118 @@
+@use "../../styles/style.scss" as *;
+
+.account {
+  position: relative;
+  &__h2 {
+    margin-bottom: 10px;
+  }
+
+  &__list {
+    @include listReset();
+    @include flexible();
+    flex-direction: column;
+    width: 100%;
+  }
+
+  &__item{
+    width: 100%;
+    max-width: 400px
+  }
+
+  &__btn {
+    @include btnReset();
+    @include standartBtn();
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  &__btn-danger{
+    background-color: $color6;
+    color: $white;
+  }
+
+  &__delete-descr{
+    margin-bottom: 5px;
+    font-size: 0.8em;
+  }
+
+  &__modal {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 5px;
+    color: white;
+    z-index: 1000;
+    animation:
+      slideIn 0.3s ease-out,
+      fadeOut 0.5s ease-in 2.5s forwards;
+
+    &-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    &.error {
+      background-color: #ff4444;
+    }
+
+    &.success {
+      background-color: #00c851;
+    }
+  }
+
+  &__loading{
+    height: 16px;
+  }
+}
+
+.account-form {
+  display: flex;
+  flex-direction: column;
+  &__group {
+    display: flex;
+    flex-direction: column;
+  }
+  &__input {
+    padding: 5px;
+    border: 1px solid $black;
+    border-radius: 5px;
+    outline: none;
+    margin-bottom: 10px;
+    width: 100%;
+    max-width: 400px;
+  }
+  &__input-block {
+    position: relative;
+  }
+  &__btn-toggle {
+    @include btnReset();
+    height: 20px;
+    position: absolute;
+    top: 12%;
+    right: 4%;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

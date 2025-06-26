@@ -7,6 +7,10 @@
   gap: 15px;
   width: 100%;
 
+  &__active-users{
+    margin-bottom: 10px;
+  }
+
   &__h2 {
     margin-bottom: 10px;
   }
@@ -17,14 +21,18 @@
     align-items: flex-start;
   }
 
+  &__collapse {
+    width: 100%;
+  }
+
   &__list {
     @include listReset();
     @include flexible();
     flex-direction: column;
     width: 100%;
     gap: 10px;
-    &_weekly{
-      margin-bottom: 30px
+    &_weekly {
+      margin-bottom: 30px;
     }
   }
 
@@ -91,4 +99,8 @@
       }
     }
   }
+}
+
+.ant-collapse-content-box{
+  padding: 15px 0 0 !important;
 }
