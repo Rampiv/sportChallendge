@@ -56,8 +56,7 @@ export const login = createAsyncThunk(
 
       return toSerializableUser(userCredential.user) // преобразованный юзер объект, чтобы консоль не повесилась
     } catch (error) {
-      const authError = error as AuthError
-      return rejectWithValue(authError.message)
+      return rejectWithValue("Ошибка аутентификации")
     }
   },
 )
@@ -174,6 +173,7 @@ export const updateUserPassword = createAsyncThunk(
     }
   },
 )
+
 export const logoutUser = createAsyncThunk(
   "auth/logout",
   async (_, { dispatch }) => {
@@ -207,6 +207,45 @@ export const deleteAccount = createAsyncThunk(
   },
 )
 
+// функция автоматического входа при переключении страниц
+export const checkAuthState = createAsyncThunk(
+  "auth/checkAuth",
+  async (_, { dispatch }) => {
+    try {
+      // Ждем готовности состояния аутентификации Firebase
+      await auth.authStateReady()
+
+      const user = auth.currentUser
+      if (user) {
+        // Если пользователь авторизован в Firebase
+        const serializedUser = toSerializableUser(user)
+
+        // Сохраняем в localStorage (на случай обновления страницы)
+        localStorage.setItem(
+          "RampivSportChallendge",
+          JSON.stringify(serializedUser),
+        )
+
+        // Обновляем состояние Redux
+        dispatch(setUser(serializedUser))
+        return serializedUser
+      }
+
+      // Проверяем localStorage как fallback
+      const savedUser = localStorage.getItem("RampivSportChallendge")
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser)
+        dispatch(setUser(parsedUser))
+        return parsedUser
+      }
+
+      return null
+    } catch (error) {
+      console.error("Auth state check failed:", error)
+      throw error
+    }
+  },
+)
 
 const authSlice = createAppSlice({
   name: "auth",
@@ -279,6 +318,22 @@ const authSlice = createAppSlice({
       .addCase(logoutUser.fulfilled, state => {
         state.user = null
         state.isEmailVerified = false
+      })
+
+      // Обработку checkAuthState
+      .addCase(checkAuthState.pending, state => {
+        state.isLoading = true
+      })
+      .addCase(checkAuthState.fulfilled, (state, action) => {
+        state.isLoading = false
+        state.user = action.payload
+        if (action.payload) {
+          state.isEmailVerified = action.payload.emailVerified
+        }
+      })
+      .addCase(checkAuthState.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.error.message || "Ошибка проверки авторизации"
       })
   },
 })

@@ -69,10 +69,17 @@ export const AuthPage = () => {
       localStorage.setItem("RampivSportChallendge", JSON.stringify(result))
 
       navigate("/")
-    } catch (error) {
-      // Ошибки уже обработаны в thunks, но можно добавить доп. логику
-      console.error("Auth error:", error)
-      setError("Произошла ошибка. Перезагрузите страницу")
+    } catch (error: unknown) {
+      let errorMessage = "Произошла ошибка. Перезагрузите страницу"
+
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === "string") {
+        errorMessage = error
+      } else if (error && typeof error === "object" && "message" in error) {
+        errorMessage = String(error.message)
+      }
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

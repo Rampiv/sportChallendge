@@ -49,8 +49,8 @@ export const fetchUserRankings = createAsyncThunk(
 
         // Считаем выполненные челленджи
         for (const challengeId in challenges) {
-          if (challenges[challengeId].isCompleted) {
-            completed++
+          if (challenges[challengeId].countCompleted) {
+            completed += challenges[challengeId].countCompleted
           }
         }
 

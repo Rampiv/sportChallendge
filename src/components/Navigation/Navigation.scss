@@ -23,7 +23,7 @@
     @include standartBtn();
     @include flexible();
     padding: 10px;
-    min-height: 64px;
+    &{min-height: 64px;}
 
     text-align: center;
     box-shadow: 0px 0px 5px $color1;

@@ -1,3 +1,3 @@
 # Sport challendge
 
-ts, redux toolkit, firebase
+ts, redux toolkit, antd, firebase, vite

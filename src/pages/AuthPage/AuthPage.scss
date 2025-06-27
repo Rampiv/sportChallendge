@@ -5,18 +5,20 @@
 
   &__content {
     @include flexible();
-    flex-direction: column;
-    gap: 15px;
+    & {
+      flex-direction: column;
+      gap: 15px;
 
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
 
-    padding: 20px;
+      padding: 20px;
 
-    border-radius: 15px;
-    box-shadow: 5px 5px 30px $black;
+      border-radius: 15px;
+      box-shadow: 5px 5px 30px $black;
+    }
   }
 
   &__h2 {
@@ -31,10 +33,12 @@
 
   &__credential {
     @include flexible();
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    position: relative;
+    & {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      position: relative;
+    }
 
     &-input {
       outline: none;
@@ -47,10 +51,12 @@
     }
 
     &-button {
-      @include standartBtn();
       @include flexible();
-      overflow: hidden;
-      min-height: 38px;
+      @include standartBtn();
+      & {
+        overflow: hidden;
+        min-height: 38px;
+      }
     }
 
     .password-control {
@@ -67,10 +73,12 @@
 
   &__toggle {
     @include standartBtn();
-    position: relative;
-    padding: 10px 10px;
-    background-color: $color1;
-    color: $white;
+    & {
+      padding: 10px 10px;
+      position: relative;
+      background-color: $color1;
+      color: $white;
+    }
     &:focus {
       background-color: $white;
       color: $black;
@@ -82,7 +90,7 @@
   }
 }
 
-.error{
+.error {
   color: red;
   font-size: 10px;
   text-align: center;

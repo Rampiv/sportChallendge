@@ -7,6 +7,7 @@ import {
   logoutUser,
   deleteAccount,
   selectCurrentUser,
+  checkAuthState,
 } from "../../features/authSlice/authSlice"
 import { EyeVisible, HomeIcon, InfiniteSpinner } from "../../assets/svg"
 import "./AccountPage.scss"
@@ -47,6 +48,11 @@ export const AccountPage = () => {
     showPassword: false,
     confirmDelete: false,
   })
+
+  // Проверяем состояние авторизации при загрузке приложения
+  useEffect(() => {
+    dispatch(checkAuthState())
+  }, [dispatch])
 
   // Заполняем данные пользователя при загрузке
   useEffect(() => {
@@ -127,7 +133,7 @@ export const AccountPage = () => {
       })
     } catch (err) {
       showModal("error", "Ошибка при изменении пароля")
-      console.log(err);
+      console.log(err)
     } finally {
       setLoading(false)
     }
@@ -387,7 +393,10 @@ export const AccountPage = () => {
                 <li className="account__item">
                   <h2 className="account__h2">Опасные действия</h2>
 
-                  <button onClick={handleLogout} className="account__btn account__btn-danger">
+                  <button
+                    onClick={handleLogout}
+                    className="account__btn account__btn-danger"
+                  >
                     Выйти из аккаунта
                   </button>
                 </li>
