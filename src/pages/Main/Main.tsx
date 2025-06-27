@@ -20,7 +20,7 @@ import {
 import "./Main.scss"
 import { database } from "../../firebase/config"
 import { get, ref, update } from "firebase/database"
-import { Rating, UserIcon } from "../../assets/svg"
+import { HomeIcon, Rating, UserIcon } from "../../assets/svg"
 import type { CollapseProps } from "antd"
 import { Collapse } from "antd"
 import {
@@ -281,9 +281,10 @@ export const Main: React.FC = () => {
     <>
       <NavigationMemo
         props={[
+          { text: <HomeIcon />, href: "/" },
           { text: <Rating />, href: "/rating" },
           { text: <UserIcon />, href: "/account" },
-          { text: "FAQ", href: "#" },
+          // { text: "FAQ", href: "#" },
         ]}
       />
       <section className="challenges">

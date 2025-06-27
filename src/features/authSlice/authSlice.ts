@@ -95,22 +95,55 @@ export const register = createAsyncThunk(
 
 export const updateUserEmail = createAsyncThunk(
   "auth/updateEmail",
-  async ({ newEmail, password }: { newEmail: string; password: string }) => {
-    const user = auth.currentUser
-    if (!user) throw new Error("User not authenticated")
+  async (
+    { newEmail, password }: { newEmail: string; password: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const user = auth.currentUser;
+      if (!user || !user.email) {
+        return rejectWithValue("Пользователь не авторизован");
+      }
 
-    // Реаутентификация перед сменой email
-    const credential = EmailAuthProvider.credential(user.email!, password)
-    await reauthenticateWithCredential(user, credential)
+      // 1. Создаем учетные данные для повторной аутентификации
+      const credential = EmailAuthProvider.credential(user.email, password);
+      
+      // 2. Выполняем повторную аутентификацию
+      try {
+        await reauthenticateWithCredential(user, credential);
+      } catch (reauthError) {
+        console.error("Reauthentication failed:", reauthError);
+        return rejectWithValue("Неверный пароль. Проверьте введенные данные");
+      }
 
-    await updateEmail(user, newEmail)
+      // 3. Обновляем email в Firebase Auth
+      await updateEmail(user, newEmail);
 
-    // Обновляем email в базе данных
-    await set(ref(database, `users/${user.uid}/email`), newEmail)
+      // 4. Обновляем email в базе данных Realtime Database
+      await set(ref(database, `users/${user.uid}/email`), newEmail);
 
-    return { email: newEmail }
-  },
-)
+      // 5. Возвращаем обновленные данные
+      return { email: newEmail };
+    } catch (error) {
+      console.error("Email update error:", error);
+      
+      let errorMessage = "Ошибка при изменении email";
+      if (error instanceof Error) {
+        const firebaseError = error as { code?: string };
+        
+        if (firebaseError.code === "auth/email-already-in-use") {
+          errorMessage = "Этот email уже используется другим аккаунтом";
+        } else if (firebaseError.code === "auth/invalid-email") {
+          errorMessage = "Неверный формат email";
+        } else if (firebaseError.code === "auth/requires-recent-login") {
+          errorMessage = "Требуется повторный вход для безопасности";
+        }
+      }
+      
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
 
 export const updateUserProfile = createAsyncThunk(
   "auth/updateProfile",

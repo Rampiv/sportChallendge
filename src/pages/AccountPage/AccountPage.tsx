@@ -9,7 +9,7 @@ import {
   selectCurrentUser,
   checkAuthState,
 } from "../../features/authSlice/authSlice"
-import { EyeVisible, HomeIcon, InfiniteSpinner } from "../../assets/svg"
+import { EyeVisible, HomeIcon, InfiniteSpinner, Rating, UserIcon } from "../../assets/svg"
 import "./AccountPage.scss"
 import { Navigation } from "../../components"
 
@@ -180,7 +180,9 @@ export const AccountPage = () => {
 
   return (
     <>
-      <NavigationMemo props={[{ text: <HomeIcon />, href: "/" }]} />
+      <NavigationMemo props={[{ text: <HomeIcon />, href: "/" },
+                { text: <Rating />, href: "/rating" },
+                { text: <UserIcon />, href: "/account" },]} />
       <section className="account">
         <div className="container">
           {modal.type && (
@@ -193,6 +195,7 @@ export const AccountPage = () => {
             {/* Секция изменения email */}
             <li className="account__item">
               <h2 className="account__h2">Изменение email</h2>
+              <span className="account__email-descr">Изменение email невозможно, если него не подтвердить на почте</span>
               <form onSubmit={handleUpdateEmail} className="account-form">
                 <div className="account-form__group">
                   <label className="account-form__label">Текущий email</label>
