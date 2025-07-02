@@ -119,8 +119,11 @@ export const incrementChallengeProgress = createAsyncThunk(
           const updatedCurrent = challenge.current + 1
           const updatedIsCompleted = updatedCurrent >= challenge.target
           const updatedCountCompleted = updatedIsCompleted
-            ? challenge.countCompleted + 1
-            : challenge.countCompleted
+            ? +challenge.countCompleted + 1
+            : +challenge.countCompleted
+          const updatedIsCompletedData = updatedIsCompleted
+            ? challenge.isCompletedData ? [...challenge.isCompletedData, Date.now()] : [Date.now()]
+            : challenge.isCompletedData ? [...challenge.isCompletedData] : []
 
           // Обновляем challenge
           await set(challengeRef, {
@@ -128,6 +131,7 @@ export const incrementChallengeProgress = createAsyncThunk(
             current: updatedCurrent,
             isCompleted: updatedIsCompleted,
             countCompleted: updatedCountCompleted,
+            isCompletedData: updatedIsCompletedData,
           })
 
           // Если это daily challenge и он выполнен, увеличиваем ВСЕ weekly challenges

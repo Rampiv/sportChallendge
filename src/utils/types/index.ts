@@ -43,6 +43,7 @@ export type Challenge = {
   lastResetDate?: string
   countCompleted: number
   group?: string
+  isCompletedData?: number[]
 }
 
 export type ChallengesState = {

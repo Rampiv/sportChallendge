@@ -1,3 +1,3 @@
 # Sport challendge
 
-ts, redux toolkit, antd, firebase, vite
+ts, redux toolkit, antd, chart.js, firebase, vite

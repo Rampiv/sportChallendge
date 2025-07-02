@@ -1,21 +1,20 @@
 import { Link } from "react-router"
 import "./Navigation.scss"
-import { ReactNode } from "react"
+import { HomeIcon, Rating, Statistic, UserIcon } from "../../assets/svg"
 
-interface Props {
-  text: ReactNode
-  href: string
-}
-interface ArrayProps {
-  props: Props[]
-}
+const links = [
+  { text: <HomeIcon />, href: "/" },
+  { text: <Rating />, href: "/rating" },
+  { text: <UserIcon />, href: "/account" },
+  { text: <Statistic />, href: "/statistic" },
+]
 
-export const Navigation = ({ props }: ArrayProps) => {
+export const Navigation = () => {
   return (
     <nav className="navigation">
       <div className="container">
         <ul className="navigation__list">
-          {props.map((item, index) => {
+          {links.map((item, index) => {
             return (
               <li className="navigation__item" key={`${item.text} ${index}`}>
                 <Link

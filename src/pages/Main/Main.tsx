@@ -20,7 +20,6 @@ import {
 import "./Main.scss"
 import { database } from "../../firebase/config"
 import { get, ref, update } from "firebase/database"
-import { HomeIcon, Rating, UserIcon } from "../../assets/svg"
 import type { CollapseProps } from "antd"
 import { Collapse } from "antd"
 import {
@@ -279,14 +278,7 @@ export const Main: React.FC = () => {
 
   return (
     <>
-      <NavigationMemo
-        props={[
-          { text: <HomeIcon />, href: "/" },
-          { text: <Rating />, href: "/rating" },
-          { text: <UserIcon />, href: "/account" },
-          // { text: "FAQ", href: "#" },
-        ]}
-      />
+      <NavigationMemo />
       <section className="challenges">
         <div className="container">
           <div className="challenges__content">
@@ -305,8 +297,9 @@ export const Main: React.FC = () => {
                 </span>
               )}
             </ul>
-             <span className="challenges__active-users">
-              Активных пользователей сегодня: <strong>{activeUsersCount}</strong>
+            <span className="challenges__active-users">
+              Активных пользователей сегодня:{" "}
+              <strong>{activeUsersCount}</strong>
             </span>
 
             {user && (
