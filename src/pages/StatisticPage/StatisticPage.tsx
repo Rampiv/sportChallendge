@@ -33,9 +33,11 @@ export const StatisticPage = () => {
       title: string
       participantsCount: number
       isCompleted: boolean
+      users?: string[]
     }>
   >([])
-  const [achievementAdded, setAchievementAdded] = useState(false)
+
+  const { user } = useAppSelector((state: RootState) => state.auth)
 
   const chartRef = useRef<HTMLCanvasElement>(null)
   const chartInstance = useRef<Chart | null>(null)
@@ -142,6 +144,8 @@ export const StatisticPage = () => {
 
   // Получаем данные о еженедельных испытаниях
   useEffect(() => {
+    if (!user) return
+
     const weeklyRef = ref(database, "weeklyChallenges")
 
     const unsubscribeWeekly = onValue(weeklyRef, snapshot => {
@@ -153,21 +157,17 @@ export const StatisticPage = () => {
             title: challenge.title,
             participantsCount: challenge.users?.length || 0,
             isCompleted: challenge.isCompleted,
+            users: challenge.users || [],
           }),
         )
         setWeeklyChallenges(challenges)
       }
     })
 
-    return () => unsubscribeWeekly()
-  }, [])
-
-  // Добавляем достижение участникам (если нужно)
-  useEffect(() => {
-    if (weeklyChallenges.length > 0 && !achievementAdded) {
-      setAchievementAdded(true)
+    return () => {
+      unsubscribeWeekly()
     }
-  }, [weeklyChallenges, achievementAdded])
+  }, [user?.uid])
 
   return (
     <>
@@ -186,21 +186,20 @@ export const StatisticPage = () => {
             достижение
           </p>
           <ul className="statistic__list">
-            {weeklyChallenges.map(challenge =>
-              challenge.isCompleted ? (
+            {weeklyChallenges
+              .filter(
+                challenge =>
+                  challenge.isCompleted &&
+                  challenge.users?.includes(user?.uid || ""),
+              )
+              .map(challenge => (
                 <li key={challenge.id} className="statistic__item">
                   <h3 className="statistic__h3">
                     <Achivment />
                     {challenge.title}
                   </h3>
-                  <p className="statistic__participants">
-                    Участников: {challenge.participantsCount}
-                  </p>
                 </li>
-              ) : (
-                ""
-              ),
-            )}
+              ))}
           </ul>
         </div>
       </section>
