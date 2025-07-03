@@ -5,8 +5,8 @@ import { HomeIcon, Rating, Statistic, UserIcon } from "../../assets/svg"
 const links = [
   { text: <HomeIcon />, href: "/" },
   { text: <Rating />, href: "/rating" },
-  { text: <UserIcon />, href: "/account" },
   { text: <Statistic />, href: "/statistic" },
+  { text: <UserIcon />, href: "/account" },
 ]
 
 export const Navigation = () => {

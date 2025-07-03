@@ -286,9 +286,10 @@ export const Main: React.FC = () => {
             <ul className="challenges__list challenges__list_weekly">
               {weeklyChallenges.length > 0 ? (
                 weeklyChallenges.map(item => (
+                  !item.isCompleted ?
                   <li key={item.id} className="challenges__item">
                     {renderChallengeItem(item)}
-                  </li>
+                  </li> : ''
                 ))
               ) : (
                 <span className="challenges__void">

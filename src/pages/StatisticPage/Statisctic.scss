@@ -1,5 +1,29 @@
+@use "../../styles/style.scss" as *;
 .statistic {
-    &__h2 {
-        margin-bottom: 15px;
+  &__h2 {
+    margin-bottom: 15px;
+  }
+  &__canvas {
+    max-height: 400px;
+  }
+  &__descr {
+    font-size: 0.7em;
+    margin-bottom: 15px;
+  }
+  &__list {
+    @include listReset();
+    @include flexible();
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  &__h3 {
+    @include flexible();
+    margin-bottom: 5px;
+    svg {
+      width: 50px;
+      margin-right: 5px;
     }
+  }
 }

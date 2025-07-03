@@ -12,6 +12,13 @@ const initialState: ChallengesState = {
   error: null,
 }
 
+function addUniqueItem(arr: Array<string>, item: string) {
+    if (!arr.includes(item)) {
+        arr.push(item);
+    }
+    return arr;
+}
+
 // Асинхронные thunks для работы с Firebase
 export const fetchWeeklyChallenges = createAsyncThunk(
   "challenges/fetchWeekly",
@@ -122,8 +129,12 @@ export const incrementChallengeProgress = createAsyncThunk(
             ? +challenge.countCompleted + 1
             : +challenge.countCompleted
           const updatedIsCompletedData = updatedIsCompleted
-            ? challenge.isCompletedData ? [...challenge.isCompletedData, Date.now()] : [Date.now()]
-            : challenge.isCompletedData ? [...challenge.isCompletedData] : []
+            ? challenge.isCompletedData
+              ? [...challenge.isCompletedData, Date.now()]
+              : [Date.now()]
+            : challenge.isCompletedData
+              ? [...challenge.isCompletedData]
+              : []
 
           // Обновляем challenge
           await set(challengeRef, {
@@ -151,12 +162,17 @@ export const incrementChallengeProgress = createAsyncThunk(
                   )
                   const weeklyChallenge = weeklyChallenges[weeklyId]
                   const newCurrent = weeklyChallenge.current + 1
+                  const weeklyIsCompleted = weeklyChallenge.isCompleted
+                  const updatedUsers = addUniqueItem(weeklyChallenge.users ? [...weeklyChallenge.users] : [], userId)
 
-                  await set(weeklyRef, {
-                    ...weeklyChallenge,
-                    current: newCurrent,
-                    isCompleted: newCurrent >= weeklyChallenge.target,
-                  })
+                  if (!weeklyIsCompleted) {
+                    await set(weeklyRef, {
+                      ...weeklyChallenge,
+                      current: newCurrent,
+                      isCompleted: newCurrent >= weeklyChallenge.target,
+                      users: updatedUsers
+                    })
+                  }
                 },
               )
 
