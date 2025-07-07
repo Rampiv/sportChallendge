@@ -78,4 +78,11 @@
 
 .modal-error-input {
   outline: 1px solid $color6;
+  border-radius: 5px;
+}
+
+.modal-select{
+  margin-bottom: 15px;
+  max-width: 50%;
+  width: 100%;
 }

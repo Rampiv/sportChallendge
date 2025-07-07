@@ -1,5 +1,8 @@
 import React, { useState } from "react"
+import { Select } from "antd"
 import "./ChallengeModal.scss"
+import { useAppSelector } from "../../app/hooks"
+import { RootState } from "../../app/store"
 
 interface AddChallengeModalProps {
   visible: boolean
@@ -16,6 +19,11 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
   const [target, setTarget] = useState("")
   const [group, setGroup] = useState("")
   const [error, setError] = useState("")
+  const [groupVisible, setGroupVisible] = useState(false)
+
+  const { dailyChallenges } = useAppSelector(
+    (state: RootState) => state.challenges,
+  )
 
   const handleAdd = () => {
     const targetNumber = parseInt(target, 10)
@@ -28,10 +36,34 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
       onAdd(title, targetNumber, group)
       setTitle("")
       setTarget("")
-      setGroup("")
+      // setGroup("")
     } else {
       setError("Необходимо заполнить все поля")
     }
+  }
+
+  const handleChange = (value: string) => {
+    if (value === "custom") {
+      setGroupVisible(true)
+      setGroup("")
+    } else {
+      setGroupVisible(false)
+      setGroup(value)
+    }
+  }
+
+  const addUserGroup = () => {
+    const uniqueGroups = dailyChallenges.reduce(
+      (acc, item) => {
+        if (item.group && !acc.some(group => group.value === item.group)) {
+          acc.push({ value: item.group, label: item.group })
+        }
+        return acc
+      },
+      [] as Array<{ value: string; label: string }>,
+    )
+
+    return [...uniqueGroups, { value: "custom", label: "Кастом" }]
   }
 
   if (!visible) return null
@@ -59,13 +91,23 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
           onChange={e => setTarget(e.target.value)}
         />
 
+        <Select
+          defaultValue="Выберете группу"
+          className={`modal-select ${error && !group ? "modal-error-input" : ""}`}
+          onChange={handleChange}
+          options={addUserGroup()}
+        />
+
         <input
-          className={`modal-input ${error && !group ? "modal-error-input" : ""}`.trim()}
+          className={`modal-input ${error && !group ? "modal-error-input" : ""} ${!groupVisible ? "hide" : ""}`.trim()}
           type="text"
           placeholder="Группа"
           value={group}
-          required
-          onChange={e => setGroup(e.target.value)}
+          onChange={e => {
+            if (groupVisible) {
+              setGroup(e.target.value)
+            }
+          }}
         />
 
         <div className="modal-button-container">
