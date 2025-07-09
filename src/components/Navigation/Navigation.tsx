@@ -7,6 +7,7 @@ const links = [
   { text: <Rating />, href: "/rating" },
   { text: <Statistic />, href: "/statistic" },
   { text: <UserIcon />, href: "/account" },
+  { text: "FAQ", href: "/faq" },
 ]
 
 export const Navigation = () => {

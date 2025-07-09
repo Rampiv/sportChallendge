@@ -69,4 +69,22 @@ export interface StatsState {
   rankingsError: string | null
   loading: boolean
   error: string | null
+  streak: {
+    current: number,
+    best: number,
+    lastCompleted: null,
+    loading: boolean,
+    streakError: string | null,
+  },
+  userStreaks: UserStreak[],
+  streaksLoading: boolean,
+  streaksError: string | null,
+}
+
+export interface UserStreak {
+  userId: string
+  userName: string
+  current: number
+  best: number
+  lastCompleted: number | null
 }

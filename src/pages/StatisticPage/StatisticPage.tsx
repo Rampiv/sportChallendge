@@ -7,6 +7,7 @@ import { Chart } from "chart.js/auto"
 import { onValue, ref } from "firebase/database"
 import { database } from "../../firebase/config"
 import { Achivment } from "../../assets/svg"
+import { Link } from "react-router"
 
 // Форматирование даты в DD/MM/YYYY
 const formatDate = (timestamp: number): string => {
@@ -174,17 +175,23 @@ export const StatisticPage = () => {
       <Navigation />
       <section className="statistic">
         <div className="container">
-          <h2 className="statistic__h2">Статистика</h2>
+          <h2 className="statistic__h2">
+            Статистика{" "}
+            <Link to="/faq?question=3" className="faq-link faq-link-small">
+              FAQ
+            </Link>
+          </h2>
           <canvas
             id="myChart"
             ref={chartRef}
             className="statistic__canvas"
           ></canvas>
-          <h2 className="statistic__h2">Достижения</h2>
-          <p className="statistic__descr">
-            Все, кто учавствовал в еженедельном(общем) ивенте - получают
-            достижение
-          </p>
+          <h2 className="statistic__h2">
+            Достижения{" "}
+            <Link to="/faq?question=4" className="faq-link faq-link-small">
+              FAQ
+            </Link>
+          </h2>
           <ul className="statistic__list">
             {weeklyChallenges
               .filter(

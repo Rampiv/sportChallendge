@@ -63,7 +63,7 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
       [] as Array<{ value: string; label: string }>,
     )
 
-    return [...uniqueGroups, { value: "custom", label: "Кастом" }]
+    return [...uniqueGroups, { value: "custom", label: <strong>Создать группу</strong> }]
   }
 
   if (!visible) return null

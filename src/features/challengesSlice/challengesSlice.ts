@@ -1,5 +1,5 @@
 import { createAsyncThunk, PayloadAction } from "@reduxjs/toolkit"
-import { ref, onValue, set, push, remove, get } from "firebase/database"
+import { ref, onValue, set, push, remove, get, update } from "firebase/database"
 import { Challenge, ChallengesState } from "../../utils/types"
 import { database } from "../../firebase/config"
 import { createAppSlice } from "../../app/createAppSlice"
@@ -13,10 +13,10 @@ const initialState: ChallengesState = {
 }
 
 function addUniqueItem(arr: Array<string>, item: string) {
-    if (!arr.includes(item)) {
-        arr.push(item);
-    }
-    return arr;
+  if (!arr.includes(item)) {
+    arr.push(item)
+  }
+  return arr
 }
 
 // Асинхронные thunks для работы с Firebase
@@ -101,6 +101,7 @@ export const deleteDailyChallenge = createAsyncThunk(
   },
 )
 
+// повышаем значение челленджа, если daily выполнен, то и weekly, обновляем количество дней подряд (стрик)
 export const incrementChallengeProgress = createAsyncThunk(
   "challenges/incrementProgress",
   async ({
@@ -145,9 +146,9 @@ export const incrementChallengeProgress = createAsyncThunk(
             isCompletedData: updatedIsCompletedData,
           })
 
-          // Если это daily challenge и он выполнен, увеличиваем ВСЕ weekly challenges
+          // Если это daily challenge и он выполнен, увеличиваем ВСЕ weekly challenges, streak механика
           if (isDaily && updatedIsCompleted) {
-            // Получаем текущие weekly challenges
+            // 1.обновляем weeklyChallenge
             const weeklyChallengesRef = ref(database, "weeklyChallenges")
             const weeklySnapshot = await get(weeklyChallengesRef)
             const weeklyChallenges = weeklySnapshot.val()
@@ -163,14 +164,17 @@ export const incrementChallengeProgress = createAsyncThunk(
                   const weeklyChallenge = weeklyChallenges[weeklyId]
                   const newCurrent = weeklyChallenge.current + 1
                   const weeklyIsCompleted = weeklyChallenge.isCompleted
-                  const updatedUsers = addUniqueItem(weeklyChallenge.users ? [...weeklyChallenge.users] : [], userId)
+                  const updatedUsers = addUniqueItem(
+                    weeklyChallenge.users ? [...weeklyChallenge.users] : [],
+                    userId,
+                  )
 
                   if (!weeklyIsCompleted) {
                     await set(weeklyRef, {
                       ...weeklyChallenge,
                       current: newCurrent,
                       isCompleted: newCurrent >= weeklyChallenge.target,
-                      users: updatedUsers
+                      users: updatedUsers,
                     })
                   }
                 },
@@ -178,6 +182,60 @@ export const incrementChallengeProgress = createAsyncThunk(
 
               await Promise.all(updatePromises)
             }
+
+            // 2.обновляем стрик
+            const userRef = ref(database, `users/${userId}`)
+            const userSnapshot = await get(userRef)
+            const user = userSnapshot.val()
+            const now = Date.now()
+            const today = new Date(now).setHours(0, 0, 0, 0)
+            const yesterday = today - 86400000 // минус 1 день в миллисекундах
+
+            // Проверяем, когда последний раз обновлялся стрик
+            const lastCompleted = user?.streak?.lastCompleted || 0
+            const lastCompletedDate = new Date(lastCompleted).setHours(
+              0,
+              0,
+              0,
+              0,
+            )
+
+            // Если последнее обновление было не сегодня
+            if (lastCompletedDate < today) {
+              let currentStreak = user?.streak?.current || 0
+
+              // Проверяем, был ли вчера выполнен daily
+              if (lastCompleted >= yesterday) {
+                currentStreak += 1
+              } else {
+                currentStreak = 1 // Сбрасываем стрик, если пропустили день
+              }
+
+              // Обновляем данные пользователя
+              await update(userRef, {
+                ...user,
+                streak: {
+                  current: currentStreak,
+                  lastCompleted: now, // Фиксируем время последнего выполнения
+                  best: Math.max(currentStreak, user?.streak?.best || 0),
+                },
+              })
+            }
+
+            // 3. Добавляем достижение за стрик
+            // if (currentStreak % 7 === 0) {
+            //   // Например, каждые 7 дней
+            //   const achievementRef = ref(
+            //     database,
+            //     `users/${userId}/achievements/streak_${currentStreak}`,
+            //   )
+            //   await set(achievementRef, {
+            //     title: `${currentStreak}-дневный стрик!`,
+            //     description: `Вы выполняете задания ${currentStreak} дней подряд`,
+            //     date: now,
+            //     type: "streak",
+            //   })
+            // }
           }
         }
       },

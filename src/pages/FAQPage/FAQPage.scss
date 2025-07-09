@@ -1,0 +1,16 @@
+@use "../../styles/style.scss" as *;
+
+.faq-link {
+  color: $color1;
+  text-decoration: underline;
+  &-small{
+    font-size: 10px;
+  }
+}
+
+
+.faq {
+  &__descr {
+    padding: 0 15px 10px 15px;
+  }
+}

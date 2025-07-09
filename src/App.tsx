@@ -1,6 +1,13 @@
 import "./App.scss"
 import { Route, Routes } from "react-router"
-import { AccountPage, AuthPage, Main, RatingPage, StatisticPage } from "./pages"
+import {
+  AccountPage,
+  AuthPage,
+  FAQPage,
+  Main,
+  RatingPage,
+  StatisticPage,
+} from "./pages"
 import { ProtectedRoute } from "./components"
 import { useAppDispatch } from "./app/hooks"
 import { useEffect } from "react"
@@ -24,6 +31,7 @@ export const App = () => {
           <Route path="/rating" element={<RatingPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/statistic" element={<StatisticPage />} />
+          <Route path="/faq" element={<FAQPage />} />
         </Route>
       </Routes>
     </div>

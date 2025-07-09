@@ -24,11 +24,17 @@ import type { CollapseProps } from "antd"
 import { Collapse } from "antd"
 import {
   fetchActiveUsersCount,
+  fetchUserStreak,
   selectActiveUsersCount,
+  selectUserStreak,
 } from "../../features/statsSlice/statesSlice"
 import { updateUserActivity } from "../../utils/services/userActivityService/userActivityService"
+import { Link } from "react-router"
 
-const NavigationMemo = React.memo(Navigation)
+const NavigationMemo = React.memo(Navigation);
+const ChallengeModalMemo = React.memo(ChallengeModal);
+const ConfirmModalMemo = React.memo(ConfirmModal);
+const LoadingMemo = React.memo(Loading);
 
 export const Main: React.FC = () => {
   const dispatch = useAppDispatch()
@@ -43,6 +49,7 @@ export const Main: React.FC = () => {
     null,
   )
   const activeUsersCount = useAppSelector(selectActiveUsersCount)
+  const { current, best } = useAppSelector(selectUserStreak)
 
   useEffect(() => {
     const init = async () => {
@@ -123,6 +130,11 @@ export const Main: React.FC = () => {
     }
 
     const midnightTimer = setupMidnightReset()
+
+    // получаем streak пользователя
+    if (user?.uid) {
+      dispatch(fetchUserStreak(user?.uid))
+    }
 
     init()
 
@@ -273,7 +285,7 @@ export const Main: React.FC = () => {
   }
 
   if (loading || weeklyChallenges.length === 0) {
-    return <Loading />
+    return <LoadingMemo />
   }
 
   return (
@@ -285,12 +297,15 @@ export const Main: React.FC = () => {
             <h2 className="challenges__h2">Еженедельные испытания</h2>
             <ul className="challenges__list challenges__list_weekly">
               {weeklyChallenges.length > 0 ? (
-                weeklyChallenges.map(item => (
-                  !item.isCompleted ?
-                  <li key={item.id} className="challenges__item">
-                    {renderChallengeItem(item)}
-                  </li> : ''
-                ))
+                weeklyChallenges.map(item =>
+                  !item.isCompleted ? (
+                    <li key={item.id} className="challenges__item">
+                      {renderChallengeItem(item)}
+                    </li>
+                  ) : (
+                    ""
+                  ),
+                )
               ) : (
                 <span className="challenges__void">
                   Нет доступных еженедельных испытаний или они еще не
@@ -303,9 +318,21 @@ export const Main: React.FC = () => {
               <strong>{activeUsersCount}</strong>
             </span>
 
+            <span className="challenges__active-users">
+              Твоя текущая{" "}
+              <Link to="/faq?question=1" className="faq-link">
+                серия
+              </Link>{" "}
+              выполнения: <strong>{current}</strong>
+            </span>
+
+            <span className="challenges__active-users">
+              Твоя максимальная серия выполнений: <strong>{best}</strong>
+            </span>
+
             {user && (
               <>
-                <h2 className="challenges__h2">Твои дневные испытаения</h2>
+                <h2 className="challenges__h2">Твои дневные испытания</h2>
                 <button
                   className="challenges__btn-add"
                   onClick={() => setIsModalVisible(true)}
@@ -317,12 +344,12 @@ export const Main: React.FC = () => {
             )}
           </div>
 
-          <ChallengeModal
+          <ChallengeModalMemo
             visible={isModalVisible}
             onClose={() => setIsModalVisible(false)}
             onAdd={handleAddChallenge}
           />
-          <ConfirmModal
+          <ConfirmModalMemo
             visible={confirmModalVisible}
             onConfirm={handleConfirmDelete}
             onCancel={handleCancelDelete}

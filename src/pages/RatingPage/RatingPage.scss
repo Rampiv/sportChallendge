@@ -1,13 +1,17 @@
-@use '../../styles/style.scss' as *;
+@use "../../styles/style.scss" as *;
 
-.rating{
-    &__h2{
-        margin-bottom: 15px;
-        display: block;
-        width: 100%;
-        text-align: center;
-    }
-    &__list{
-        @include listReset();
-    }
+.rating {
+  &__h2 {
+    margin-bottom: 15px;
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+  &__h3 {
+    margin-bottom: 10px;
+  }
+  &__list {
+    @include listReset();
+    margin-bottom: 15px;
+  }
 }
