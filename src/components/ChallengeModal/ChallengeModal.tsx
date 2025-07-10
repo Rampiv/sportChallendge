@@ -1,19 +1,28 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Select } from "antd"
 import "./ChallengeModal.scss"
 import { useAppSelector } from "../../app/hooks"
 import { RootState } from "../../app/store"
+import { Link } from "react-router"
 
 interface AddChallengeModalProps {
   visible: boolean
   onClose: () => void
   onAdd: (title: string, target: number, group: string) => void
+  edit: boolean
+  userId: string | undefined
+  challengeId: string
+  onEdit: (title: string, target: number, group: string) => void
 }
 
 export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
   visible,
   onClose,
   onAdd,
+  edit,
+  userId,
+  challengeId,
+  onEdit,
 }) => {
   const [title, setTitle] = useState("")
   const [target, setTarget] = useState("")
@@ -25,9 +34,30 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
     (state: RootState) => state.challenges,
   )
 
-  const handleAdd = () => {
+  useEffect(() => {
+    if (edit) {
+      const daily = dailyChallenges.filter(item => item.id === challengeId)
+      daily.map(item => {
+        setTitle(item.title)
+        setTarget(`${item.target}`)
+        if (item.group) {
+          setGroupVisible(true)
+          setGroup(item.group)
+        }
+      })
+    } else {
+      setTitle("")
+      setTarget("")
+      setGroup("")
+      setGroupVisible(false)
+    }
+  }, [edit])
+
+  const handleAdd = async () => {
     const targetNumber = parseInt(target, 10)
-    if (
+    if (edit && userId) {
+      onEdit(title, Number(target), group)
+    } else if (
       title.trim() &&
       !isNaN(targetNumber) &&
       targetNumber > 0 &&
@@ -36,7 +66,6 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
       onAdd(title, targetNumber, group)
       setTitle("")
       setTarget("")
-      // setGroup("")
     } else {
       setError("Необходимо заполнить все поля")
     }
@@ -63,7 +92,10 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
       [] as Array<{ value: string; label: string }>,
     )
 
-    return [...uniqueGroups, { value: "custom", label: <strong>Создать группу</strong> }]
+    return [
+      ...uniqueGroups,
+      { value: "custom", label: <strong>Создать группу</strong> },
+    ]
   }
 
   if (!visible) return null
@@ -71,7 +103,17 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h2 className="modal-title">Добавить ежедневное испытание</h2>
+        <h2 className="modal-title">
+          {edit
+            ? "Редактировать ежедневное испытание"
+            : "Добавить ежедневное испытание"}{" "}
+        <Link
+          to={edit ? "/faq?question=6" : "/faq?question=5"}
+          className="faq-link faq-link-small"
+        >
+          FAQ
+        </Link>
+        </h2>
         <span className="modal-error">{error}</span>
         <input
           className={`modal-input ${error && !title ? "modal-error-input" : ""}`.trim()}
@@ -116,7 +158,7 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
           </button>
 
           <button className="modal-button add" onClick={handleAdd}>
-            Добавить
+            {edit ? "Изменить" : "Добавить"}
           </button>
         </div>
       </div>

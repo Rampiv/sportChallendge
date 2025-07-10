@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react"
 import {
   addDailyChallenge,
   deleteDailyChallenge,
+  editDailyChallenge,
   incrementChallengeProgress,
   subscribeToChallenges,
   unsubscribeAll,
@@ -30,11 +31,12 @@ import {
 } from "../../features/statsSlice/statesSlice"
 import { updateUserActivity } from "../../utils/services/userActivityService/userActivityService"
 import { Link } from "react-router"
+import { PencilIcon } from "../../assets/svg"
 
-const NavigationMemo = React.memo(Navigation);
-const ChallengeModalMemo = React.memo(ChallengeModal);
-const ConfirmModalMemo = React.memo(ConfirmModal);
-const LoadingMemo = React.memo(Loading);
+const NavigationMemo = React.memo(Navigation)
+const ChallengeModalMemo = React.memo(ChallengeModal)
+const ConfirmModalMemo = React.memo(ConfirmModal)
+const LoadingMemo = React.memo(Loading)
 
 export const Main: React.FC = () => {
   const dispatch = useAppDispatch()
@@ -48,6 +50,8 @@ export const Main: React.FC = () => {
   const [challengeToDelete, setChallengeToDelete] = useState<string | null>(
     null,
   )
+  const [isEdit, setIsEdit] = useState(false)
+  const [challengeId, setChallengeId] = useState("")
   const activeUsersCount = useAppSelector(selectActiveUsersCount)
   const { current, best } = useAppSelector(selectUserStreak)
 
@@ -179,6 +183,32 @@ export const Main: React.FC = () => {
     }
   }
 
+  const handleEditChallenge = async (
+    title: string,
+    target: number,
+    group: string,
+  ) => {
+    if (user?.uid) {
+      await dispatch(
+        editDailyChallenge({
+          challenge: {
+            title: title,
+            target: Number(target),
+            group: group,
+            current: 0,
+            isCompleted: false,
+            type: "daily",
+            createdAt: 0,
+            countCompleted: 0,
+          },
+          userId: user?.uid,
+          challengeId: challengeId,
+        }),
+      ).unwrap()
+      setIsModalVisible(false)
+    }
+  }
+
   const renderChallengeItem = (item: Challenge) => (
     <>
       <span className="challenges__item-title">{item.title}</span>
@@ -188,17 +218,28 @@ export const Main: React.FC = () => {
       {item.type === "daily" && (
         <div className="challenges__item-actions">
           <button
+            className={`challenges__item-btn challenges__item-btn_edit`}
+            onClick={() => {
+              setIsModalVisible(true)
+              setIsEdit(true)
+              setChallengeId(item.id)
+            }}
+            disabled={item.isCompleted}
+          >
+            <PencilIcon className="challenges__item-btn_edit-title" />
+          </button>
+          <button
             className={`challenges__item-btn challenges__item-btn_completed ${item.isCompleted ? "completed" : ""}`}
             onClick={() => handleIncrementProgress(item.id, true)}
             disabled={item.isCompleted}
           >
-            {item.isCompleted ? "Готово" : "Выполнить"}
+            ✓
           </button>
           <button
             className="challenges__item-btn challenges__item-btn_delete"
             onClick={() => handleDeleteClick(item.id)}
           >
-            Удалить
+            Х
           </button>
         </div>
       )}
@@ -335,7 +376,10 @@ export const Main: React.FC = () => {
                 <h2 className="challenges__h2">Твои дневные испытания</h2>
                 <button
                   className="challenges__btn-add"
-                  onClick={() => setIsModalVisible(true)}
+                  onClick={() => {
+                    setIsEdit(false)
+                    setIsModalVisible(true)
+                  }}
                 >
                   Добавить ежедневое испытание
                 </button>
@@ -346,8 +390,15 @@ export const Main: React.FC = () => {
 
           <ChallengeModalMemo
             visible={isModalVisible}
-            onClose={() => setIsModalVisible(false)}
+            onClose={() => {
+              setIsModalVisible(false)
+              setIsEdit(false)
+            }}
             onAdd={handleAddChallenge}
+            edit={isEdit}
+            userId={user?.uid}
+            challengeId={challengeId}
+            onEdit={handleEditChallenge}
           />
           <ConfirmModalMemo
             visible={confirmModalVisible}

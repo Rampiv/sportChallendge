@@ -40,7 +40,7 @@ export const fetchWeeklyChallenges = createAsyncThunk(
 )
 
 export const fetchDailyChallenges = createAsyncThunk(
-  "challenges/fetchDaily",
+  "challenges/fetchDailyChallenges",
   async (userId: string) => {
     if (!userId) return []
 
@@ -98,6 +98,58 @@ export const deleteDailyChallenge = createAsyncThunk(
     const challengeRef = ref(database, `dailyChallenges/${userId}/${id}`)
     await remove(challengeRef)
     return id
+  },
+)
+
+export const editDailyChallenge = createAsyncThunk(
+  "challenges/editDaily",
+  async ({
+    challenge,
+    userId,
+    challengeId,
+  }: {
+    challenge: Omit<Challenge, "id">
+    userId: string
+    challengeId: string
+  }) => {
+    if (!userId) {
+      throw new Error("User ID is required")
+    }
+    if (!challengeId) {
+      throw new Error("Challenge ID is required")
+    }
+
+    const challengeRef = ref(
+      database,
+      `dailyChallenges/${userId}/${challengeId}`,
+    )
+    const snapshot = await get(challengeRef)
+
+    if (!snapshot.exists()) {
+      throw new Error("Challenge not found")
+    }
+
+    // Сохраняем прогресс и даты выполнения из существующего челленджа
+    const existingChallenge = snapshot.val()
+    const updatedChallenge = {
+      ...existingChallenge,
+      ...challenge,
+      // Не перезаписываем эти поля:
+      current: existingChallenge.current,
+      isCompleted: existingChallenge.isCompleted,
+      countCompleted: existingChallenge.countCompleted,
+      isCompletedData: existingChallenge.isCompletedData || [],
+      lastResetDate: existingChallenge.lastResetDate,
+      createdAt: existingChallenge.createdAt,
+      userId: existingChallenge.userId,
+    }
+
+    await update(challengeRef, updatedChallenge)
+
+    return {
+      id: challengeId,
+      ...updatedChallenge,
+    }
   },
 )
 
@@ -346,6 +398,14 @@ const challengesSlice = createAppSlice({
           )
         },
       )
+      .addCase(editDailyChallenge.fulfilled, (state, action) => {
+        const index = state.dailyChallenges.findIndex(
+          c => c.id === action.payload.id,
+        )
+        if (index !== -1) {
+          state.dailyChallenges[index] = action.payload
+        }
+      })
   },
 })
 
