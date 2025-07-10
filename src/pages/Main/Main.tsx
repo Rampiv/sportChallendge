@@ -224,7 +224,6 @@ export const Main: React.FC = () => {
               setIsEdit(true)
               setChallengeId(item.id)
             }}
-            disabled={item.isCompleted}
           >
             <PencilIcon className="challenges__item-btn_edit-title" />
           </button>
