@@ -3,6 +3,7 @@ import { Collapse } from "antd"
 import { useLocation } from "react-router"
 import { Navigation } from "../../components"
 import "./FAQPage.scss"
+import { AlertSignIcon } from "../../assets/svg"
 
 export const FAQPage = () => {
   const location = useLocation()
@@ -90,15 +91,25 @@ export const FAQPage = () => {
         <p className="faq__descr">
           Открывая окно редактирования, у вас автоматически заполняются все
           ячейки.
-          <br />
-          - Для того, чтобы сохранить внесенные изменения, необходимо нажать
-          зеленую кнопку <strong>"Изменить"</strong>
+          <br />- Для того, чтобы сохранить внесенные изменения, необходимо
+          нажать зеленую кнопку <strong>"Изменить"</strong>
           <br />
           - Отменить внесенные изменения можно только в том случае, если вы не
           нажимали кнопку "Изменить".
-          <br />
-          - Для отмены нажмите кнопку
+          <br />- Для отмены нажмите кнопку
           <strong>"Отмена"</strong>
+        </p>
+      ),
+    },
+    {
+      key: "7",
+      label: "Одноразовая задача",
+      children: (
+        <p className="faq__descr">
+          Это задача, которая будет <strong>удалена</strong> сразу же после
+          того, как вы её выполните. 
+          <br />
+          <AlertSignIcon /> - этот знак будет показываться рядом с задачами, которые являются одноразовыми
         </p>
       ),
     },

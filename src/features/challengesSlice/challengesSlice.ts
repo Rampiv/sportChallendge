@@ -80,7 +80,8 @@ export const addDailyChallenge = createAsyncThunk(
       createdAt: Date.now(),
       current: 0,
       isCompleted: false,
-      userId, // Добавляем ID пользователя в задание
+      userId,
+      isSingleUse: challenge.isSingleUse || false,
     }
 
     await set(newChallengeRef, newChallenge)
@@ -142,6 +143,11 @@ export const editDailyChallenge = createAsyncThunk(
       lastResetDate: existingChallenge.lastResetDate,
       createdAt: existingChallenge.createdAt,
       userId: existingChallenge.userId,
+      // Явно сохраняем isSingleUse из входящих данных
+      isSingleUse:
+        challenge.isSingleUse !== undefined
+          ? challenge.isSingleUse
+          : existingChallenge.isSingleUse || false,
     }
 
     await update(challengeRef, updatedChallenge)
@@ -197,6 +203,20 @@ export const incrementChallengeProgress = createAsyncThunk(
             countCompleted: updatedCountCompleted,
             isCompletedData: updatedIsCompletedData,
           })
+
+          // Если задача одноразовая и выполнена - удаляем ее
+          if (challenge.isSingleUse && updatedIsCompleted) {
+            await remove(challengeRef)
+          } else {
+            // Иначе обновляем как обычно
+            await set(challengeRef, {
+              ...challenge,
+              current: updatedCurrent,
+              isCompleted: updatedIsCompleted,
+              countCompleted: updatedCountCompleted,
+              isCompletedData: updatedIsCompletedData,
+            })
+          }
 
           // Если это daily challenge и он выполнен, увеличиваем ВСЕ weekly challenges, streak механика
           if (isDaily && updatedIsCompleted) {
@@ -272,6 +292,21 @@ export const incrementChallengeProgress = createAsyncThunk(
                   best: Math.max(currentStreak, user?.streak?.best || 0),
                 },
               })
+            }
+
+            // Затем обрабатываем саму задачу
+            if (challenge.isSingleUse && updatedIsCompleted) {
+              // Для одноразовых задач - сначала сохраняем статистику выполнения
+              await update(ref(database, `users/${userId}/completedTasks`), {
+                [id]: {
+                  title: challenge.title,
+                  completedAt: Date.now(),
+                  count: 1,
+                },
+              })
+
+              // Затем удаляем задачу
+              await remove(challengeRef)
             }
 
             // 3. Добавляем достижение за стрик

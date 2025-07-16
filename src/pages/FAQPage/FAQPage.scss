@@ -12,5 +12,9 @@
 .faq {
   &__descr {
     padding: 0 15px 10px 15px;
+    .alert-sign {
+      display: inline-block;
+      width: 20px;
+    }
   }
 }

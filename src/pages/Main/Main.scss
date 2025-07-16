@@ -45,6 +45,10 @@
     background-color: $color3;
     &-title {
       margin-right: auto;
+      display: flex;
+      .alert-sign {
+        width: 20px;
+      }
     }
     &-count {
       text-wrap: nowrap;
@@ -82,13 +86,13 @@
     &-btn_edit {
       background-color: $color4;
       grid-column: 1/2;
-      grid-row: 1/3
+      grid-row: 1/3;
     }
-     &-btn_edit-title{
+    &-btn_edit-title {
       fill: $color3;
       width: 20px;
       height: 20px;
-     }
+    }
   }
 
   &__btn-add {

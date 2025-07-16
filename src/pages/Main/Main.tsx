@@ -20,7 +20,7 @@ import {
 } from "../../components"
 import "./Main.scss"
 import { database } from "../../firebase/config"
-import { get, ref, update } from "firebase/database"
+import { get, off, onValue, ref, update } from "firebase/database"
 import type { CollapseProps } from "antd"
 import { Collapse } from "antd"
 import {
@@ -28,10 +28,11 @@ import {
   fetchUserStreak,
   selectActiveUsersCount,
   selectUserStreak,
+  updateStreak,
 } from "../../features/statsSlice/statesSlice"
 import { updateUserActivity } from "../../utils/services/userActivityService/userActivityService"
 import { Link } from "react-router"
-import { PencilIcon } from "../../assets/svg"
+import { AlertSignIcon, PencilIcon } from "../../assets/svg"
 
 const NavigationMemo = React.memo(Navigation)
 const ChallengeModalMemo = React.memo(ChallengeModal)
@@ -55,6 +56,7 @@ export const Main: React.FC = () => {
   const activeUsersCount = useAppSelector(selectActiveUsersCount)
   const { current, best } = useAppSelector(selectUserStreak)
 
+  // загрузка данных
   useEffect(() => {
     const init = async () => {
       try {
@@ -148,7 +150,87 @@ export const Main: React.FC = () => {
     }
   }, [dispatch, user?.uid])
 
-  const handleAddChallenge = (title: string, target: number, group: string) => {
+  // обновление серий
+  useEffect(() => {
+    const checkAndUpdateStreak = async () => {
+      if (!user?.uid) return
+
+      // Получаем текущий стрик из базы
+      const streakRef = ref(database, `users/${user.uid}/streak`)
+      const snapshot = await get(streakRef)
+
+      if (snapshot.exists()) {
+        const streakData = snapshot.val()
+        const lastCompleted = streakData.lastCompleted
+          ? new Date(streakData.lastCompleted)
+          : null
+
+        const today = new Date()
+        const yesterday = new Date(today)
+        yesterday.setDate(yesterday.getDate() - 1)
+
+        // Проверяем, был ли стрик выполнен вчера
+        const isStreakActive =
+          lastCompleted &&
+          (lastCompleted.toDateString() === yesterday.toDateString() ||
+            lastCompleted.toDateString() === today.toDateString())
+
+        // Обновляем current в зависимости от проверки
+        const newCurrent = isStreakActive ? streakData.current : 0
+
+        // Если нужно обновить, отправляем действие
+        if (newCurrent !== streakData.current) {
+          dispatch(updateStreak(newCurrent))
+          // И обновляем в базе данных
+          await update(streakRef, { current: newCurrent })
+        }
+      }
+    }
+
+    // Вызываем при монтировании
+    checkAndUpdateStreak()
+
+    // И подписываемся на изменения в базе данных
+    const streakRef = ref(database, `users/${user?.uid}/streak`)
+    onValue(streakRef, snapshot => {
+      if (snapshot.exists()) {
+        const streakData = snapshot.val()
+        dispatch(updateStreak(streakData.current))
+      }
+    })
+
+    return () => {
+      // Отписываемся при размонтировании
+      off(streakRef)
+    }
+  }, [dispatch, user?.uid])
+
+  // подписка на изменения
+  useEffect(() => {
+    if (!user?.uid) return
+
+    const streakRef = ref(database, `users/${user.uid}/streak`)
+    const unsubscribe = onValue(streakRef, snapshot => {
+      if (snapshot.exists()) {
+        const streakData = snapshot.val()
+        dispatch(
+          updateStreak({
+            current: streakData.current,
+            best: streakData.best,
+          }),
+        )
+      }
+    })
+
+    return () => unsubscribe()
+  }, [dispatch, user?.uid])
+
+  const handleAddChallenge = (
+    title: string,
+    target: number,
+    group: string,
+    isSingleUse = false,
+  ) => {
     if (user?.uid) {
       const today = new Date().toDateString()
       dispatch(
@@ -163,6 +245,7 @@ export const Main: React.FC = () => {
             lastResetDate: today,
             countCompleted: 0,
             group,
+            isSingleUse,
           },
           userId: user.uid,
         }),
@@ -171,15 +254,18 @@ export const Main: React.FC = () => {
     }
   }
 
-  const handleIncrementProgress = (id: string, isDaily: boolean) => {
+  const handleIncrementProgress = async (id: string, isDaily: boolean) => {
     if (user?.uid) {
-      dispatch(
+      await dispatch(
         incrementChallengeProgress({
           id,
           userId: user.uid,
           isDaily,
         }),
-      )
+      ).unwrap()
+
+      // Обновляем стрик после выполнения челленджа
+      await dispatch(fetchUserStreak(user.uid)).unwrap()
     }
   }
 
@@ -187,8 +273,10 @@ export const Main: React.FC = () => {
     title: string,
     target: number,
     group: string,
+    isSingleUse?: boolean,
   ) => {
     if (user?.uid) {
+      const currentChallenge = dailyChallenges.find(c => c.id === challengeId)
       await dispatch(
         editDailyChallenge({
           challenge: {
@@ -200,6 +288,10 @@ export const Main: React.FC = () => {
             type: "daily",
             createdAt: 0,
             countCompleted: 0,
+            isSingleUse:
+              isSingleUse !== undefined
+                ? isSingleUse
+                : currentChallenge?.isSingleUse || false,
           },
           userId: user?.uid,
           challengeId: challengeId,
@@ -207,11 +299,21 @@ export const Main: React.FC = () => {
       ).unwrap()
       setIsModalVisible(false)
     }
+    console.log(isSingleUse)
   }
 
   const renderChallengeItem = (item: Challenge) => (
     <>
-      <span className="challenges__item-title">{item.title}</span>
+      <span className="challenges__item-title">
+        <>
+          {item.title}
+          {item.isSingleUse && (
+            <Link to={"/faq?question=7"}>
+              <AlertSignIcon />
+            </Link>
+          )}
+        </>
+      </span>
       <span className="challenges__item-count">
         {item.current} / {item.target}
       </span>

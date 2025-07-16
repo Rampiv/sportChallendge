@@ -45,6 +45,7 @@ export type Challenge = {
   group?: string
   isCompletedData?: number[]
   users?: string[]
+  isSingleUse?: boolean;
 }
 
 export type ChallengesState = {

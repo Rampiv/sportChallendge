@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { Select } from "antd"
+import { Checkbox, Select } from "antd"
 import "./ChallengeModal.scss"
 import { useAppSelector } from "../../app/hooks"
 import { RootState } from "../../app/store"
@@ -8,11 +8,21 @@ import { Link } from "react-router"
 interface AddChallengeModalProps {
   visible: boolean
   onClose: () => void
-  onAdd: (title: string, target: number, group: string) => void
   edit: boolean
   userId: string | undefined
   challengeId: string
-  onEdit: (title: string, target: number, group: string) => void
+  onAdd: (
+    title: string,
+    target: number,
+    group: string,
+    isSingleUse?: boolean,
+  ) => void
+  onEdit: (
+    title: string,
+    target: number,
+    group: string,
+    isSingleUse?: boolean,
+  ) => void
 }
 
 export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
@@ -29,6 +39,7 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
   const [group, setGroup] = useState("")
   const [error, setError] = useState("")
   const [groupVisible, setGroupVisible] = useState(false)
+  const [isSingleUse, setIsSingleUse] = useState(false)
 
   const { dailyChallenges } = useAppSelector(
     (state: RootState) => state.challenges,
@@ -36,15 +47,15 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
 
   useEffect(() => {
     if (edit) {
-      const daily = dailyChallenges.filter(item => item.id === challengeId)
-      daily.map(item => {
-        setTitle(item.title)
-        setTarget(`${item.target}`)
-        if (item.group) {
-          setGroupVisible(true)
-          setGroup(item.group)
-        }
-      })
+      const challengeToEdit = dailyChallenges.find(
+        item => item.id === challengeId,
+      )
+      if (challengeToEdit) {
+        setTitle(challengeToEdit.title)
+        setTarget(`${challengeToEdit.target}`)
+        setGroup(challengeToEdit.group || "")
+        setIsSingleUse(challengeToEdit.isSingleUse || false) // Инициализируем текущее значение
+      }
     } else {
       setTitle("")
       setTarget("")
@@ -56,16 +67,17 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
   const handleAdd = async () => {
     const targetNumber = parseInt(target, 10)
     if (edit && userId) {
-      onEdit(title, Number(target), group)
+      onEdit(title, Number(target), group, isSingleUse)
     } else if (
       title.trim() &&
       !isNaN(targetNumber) &&
       targetNumber > 0 &&
       group.trim()
     ) {
-      onAdd(title, targetNumber, group)
+      onAdd(title, targetNumber, group, isSingleUse)
       setTitle("")
       setTarget("")
+      setIsSingleUse(false)
     } else {
       setError("Необходимо заполнить все поля")
     }
@@ -107,12 +119,12 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
           {edit
             ? "Редактировать ежедневное испытание"
             : "Добавить ежедневное испытание"}{" "}
-        <Link
-          to={edit ? "/faq?question=6" : "/faq?question=5"}
-          className="faq-link faq-link-small"
-        >
-          FAQ
-        </Link>
+          <Link
+            to={edit ? "/faq?question=6" : "/faq?question=5"}
+            className="faq-link faq-link-small"
+          >
+            FAQ
+          </Link>
         </h2>
         <span className="modal-error">{error}</span>
         <input
@@ -151,6 +163,17 @@ export const ChallengeModal: React.FC<AddChallengeModalProps> = ({
             }
           }}
         />
+
+        <Checkbox
+          className="modal-checkbox"
+          onChange={() => setIsSingleUse(!isSingleUse)}
+          checked={isSingleUse}
+        >
+          Одноразовая задача{" "}
+          <Link to={"/faq?question=7"} className="faq-link faq-link-small">
+            FAQ
+          </Link>
+        </Checkbox>
 
         <div className="modal-button-container">
           <button className="modal-button cancel" onClick={onClose}>

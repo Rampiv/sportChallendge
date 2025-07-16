@@ -1,6 +1,6 @@
-import { createAsyncThunk } from "@reduxjs/toolkit"
+import { createAsyncThunk, PayloadAction } from "@reduxjs/toolkit"
 import { database } from "../../firebase/config"
-import { ref, get } from "firebase/database"
+import { ref, get, update } from "firebase/database"
 import { RootState } from "../../app/store"
 import { createAppSlice } from "../../app/createAppSlice"
 import { StatsState, UserRanking, UserStreak } from "../../utils/types"
@@ -42,9 +42,7 @@ export const fetchUserRankings = createAsyncThunk(
       const users = usersSnapshot.exists() ? usersSnapshot.val() : {}
 
       // 2. Получаем данные daily challenges
-      const dailyChallengesSnapshot = await get(
-        ref(database, "dailyChallenges"),
-      )
+      const dailyChallengesSnapshot = await get(ref(database, "dailyChallenges"))
       const dailyChallenges = dailyChallengesSnapshot.exists()
         ? dailyChallengesSnapshot.val()
         : {}
@@ -52,32 +50,36 @@ export const fetchUserRankings = createAsyncThunk(
       // 3. Создаем массив для рейтинга
       const rankings: UserRanking[] = []
 
-      // 4. Обрабатываем каждого пользователя из dailyChallenges
-      for (const userId in dailyChallenges) {
-        const challenges = dailyChallenges[userId]
+      // 4. Обрабатываем каждого пользователя
+      for (const userId in users) {
         let completed = 0
 
-        // Считаем выполненные челленджи
-        for (const challengeId in challenges) {
-          if (challenges[challengeId].countCompleted) {
-            completed += challenges[challengeId].countCompleted
+        // 4.1. Считаем выполненные задачи из dailyChallenges
+        if (dailyChallenges[userId]) {
+          for (const challengeId in dailyChallenges[userId]) {
+            const challenge = dailyChallenges[userId][challengeId]
+            if (challenge.countCompleted) {
+              completed += challenge.countCompleted
+            }
           }
         }
 
-        // Получаем имя пользователя
-        let userName = `User Anonim`
-
-        // Проверяем наличие пользователя в базе
-        if (users[userId]) {
-          // Проверяем разные варианты имени
-          userName = users[userId].displayName
+        // 4.2. Считаем выполненные одноразовые задачи из completedTasks
+        const completedTasksSnapshot = await get(
+          ref(database, `users/${userId}/completedTasks`)
+        )
+        if (completedTasksSnapshot.exists()) {
+          completed += Object.keys(completedTasksSnapshot.val()).length
         }
+
+        // 4.3. Получаем имя пользователя
+        const userName = users[userId]?.displayName || `User ${userId.slice(0, 6)}`
 
         rankings.push({
           userId,
           userName,
           completedChallenges: completed,
-          rank: 0, // Временное значение, будет обновлено после сортировки
+          rank: 0, // Временное значение
         })
       }
 
@@ -93,7 +95,7 @@ export const fetchUserRankings = createAsyncThunk(
       console.error("Error fetching rankings:", error)
       return rejectWithValue("Failed to fetch user rankings")
     }
-  },
+  }
 )
 
 export const fetchUserStreak = createAsyncThunk(
@@ -115,7 +117,21 @@ export const fetchUserStreak = createAsyncThunk(
         }
       }
 
-      return snapshot.val()
+      const streakData = snapshot.val()
+
+      // Если current > best, обновляем best
+      const updatedBest = Math.max(streakData.current, streakData.best || 0)
+
+      // Если best изменился, сохраняем в Firebase
+      if (updatedBest !== streakData.best) {
+        await update(userRef, { best: updatedBest })
+      }
+
+      return {
+        current: streakData.current || 0,
+        best: updatedBest,
+        lastCompleted: streakData.lastCompleted || null,
+      }
     } catch (error) {
       console.error("Error fetching user streak:", error)
       return rejectWithValue("Failed to fetch user streak")
@@ -163,7 +179,17 @@ export const fetchUserStreaks = createAsyncThunk(
 const statsSlice = createAppSlice({
   name: "stats",
   initialState,
-  reducers: {},
+  reducers: {
+    updateStreak: (
+      state,
+      action: PayloadAction<{ current: number; best?: number }>,
+    ) => {
+      state.streak.current = action.payload.current
+      if (action.payload.best !== undefined) {
+        state.streak.best = action.payload.best
+      }
+    },
+  },
   extraReducers: builder => {
     builder
       .addCase(fetchActiveUsersCount.pending, state => {
@@ -198,7 +224,7 @@ const statsSlice = createAppSlice({
         state.streak = {
           ...action.payload,
           loading: false,
-          error: null,
+          streakError: null,
         }
       })
       .addCase(fetchUserStreak.rejected, (state, action) => {
@@ -239,5 +265,7 @@ export const selectStreakError = (state: RootState) =>
 export const selectUserStreaks = (state: RootState) => state.stats.userStreaks
 export const selectStreaksLoading = (state: RootState) =>
   state.stats.streaksLoading
+
+export const { updateStreak } = statsSlice.actions
 
 export default statsSlice.reducer
