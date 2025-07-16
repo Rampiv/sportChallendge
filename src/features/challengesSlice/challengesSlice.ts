@@ -171,10 +171,15 @@ export const incrementChallengeProgress = createAsyncThunk(
     userId: string
     isDaily: boolean
   }) => {
+    // получаем данные из firebase
     const path = isDaily
       ? `dailyChallenges/${userId}/${id}`
       : `weeklyChallenges/${id}`
     const challengeRef = ref(database, path)
+
+    const userRef = ref(database, `users/${userId}`)
+    const userSnapshot = await get(userRef)
+    const user = userSnapshot.val()
 
     // Получаем текущее состояние
     onValue(
@@ -204,61 +209,26 @@ export const incrementChallengeProgress = createAsyncThunk(
             isCompletedData: updatedIsCompletedData,
           })
 
-          // Если задача одноразовая и выполнена - удаляем ее
-          if (challenge.isSingleUse && updatedIsCompleted) {
-            await remove(challengeRef)
-          } else {
-            // Иначе обновляем как обычно
-            await set(challengeRef, {
-              ...challenge,
-              current: updatedCurrent,
-              isCompleted: updatedIsCompleted,
-              countCompleted: updatedCountCompleted,
-              isCompletedData: updatedIsCompletedData,
-            })
-          }
+          await set(challengeRef, {
+            ...challenge,
+            current: updatedCurrent,
+            isCompleted: updatedIsCompleted,
+            countCompleted: updatedCountCompleted,
+            isCompletedData: updatedIsCompletedData,
+          })
 
-          // Если это daily challenge и он выполнен, увеличиваем ВСЕ weekly challenges, streak механика
           if (isDaily && updatedIsCompleted) {
-            // 1.обновляем weeklyChallenge
-            const weeklyChallengesRef = ref(database, "weeklyChallenges")
-            const weeklySnapshot = await get(weeklyChallengesRef)
-            const weeklyChallenges = weeklySnapshot.val()
+            // 1. обновляем completedTasks общий для всех
+            const completedTasks = userSnapshot.exists()
+              ? user.completedTasks || 0
+              : 0
 
-            if (weeklyChallenges) {
-              // Обновляем каждый weekly challenge
-              const updatePromises = Object.keys(weeklyChallenges).map(
-                async weeklyId => {
-                  const weeklyRef = ref(
-                    database,
-                    `weeklyChallenges/${weeklyId}`,
-                  )
-                  const weeklyChallenge = weeklyChallenges[weeklyId]
-                  const newCurrent = weeklyChallenge.current + 1
-                  const weeklyIsCompleted = weeklyChallenge.isCompleted
-                  const updatedUsers = addUniqueItem(
-                    weeklyChallenge.users ? [...weeklyChallenge.users] : [],
-                    userId,
-                  )
-
-                  if (!weeklyIsCompleted) {
-                    await set(weeklyRef, {
-                      ...weeklyChallenge,
-                      current: newCurrent,
-                      isCompleted: newCurrent >= weeklyChallenge.target,
-                      users: updatedUsers,
-                    })
-                  }
-                },
-              )
-
-              await Promise.all(updatePromises)
-            }
+            await update(userRef, {
+              ...user,
+              completedTasks: completedTasks + 1,
+            })
 
             // 2.обновляем стрик
-            const userRef = ref(database, `users/${userId}`)
-            const userSnapshot = await get(userRef)
-            const user = userSnapshot.val()
             const now = Date.now()
             const today = new Date(now).setHours(0, 0, 0, 0)
             const yesterday = today - 86400000 // минус 1 день в миллисекундах
@@ -294,18 +264,43 @@ export const incrementChallengeProgress = createAsyncThunk(
               })
             }
 
-            // Затем обрабатываем саму задачу
-            if (challenge.isSingleUse && updatedIsCompleted) {
-              // Для одноразовых задач - сначала сохраняем статистику выполнения
-              await update(ref(database, `users/${userId}/completedTasks`), {
-                [id]: {
-                  title: challenge.title,
-                  completedAt: Date.now(),
-                  count: 1,
-                },
-              })
+            // 3. обновляем weeklyChallenge
+            const weeklyChallengesRef = ref(database, "weeklyChallenges")
+            const weeklySnapshot = await get(weeklyChallengesRef)
+            const weeklyChallenges = weeklySnapshot.val()
 
-              // Затем удаляем задачу
+            // Обновляем каждый weekly challenge
+            if (weeklyChallenges) {
+              const updatePromises = Object.keys(weeklyChallenges).map(
+                async weeklyId => {
+                  const weeklyRef = ref(
+                    database,
+                    `weeklyChallenges/${weeklyId}`,
+                  )
+                  const weeklyChallenge = weeklyChallenges[weeklyId]
+                  const newCurrent = weeklyChallenge.current + 1
+                  const weeklyIsCompleted = weeklyChallenge.isCompleted
+                  const updatedUsers = addUniqueItem(
+                    weeklyChallenge.users ? [...weeklyChallenge.users] : [],
+                    userId,
+                  )
+
+                  if (!weeklyIsCompleted) {
+                    await set(weeklyRef, {
+                      ...weeklyChallenge,
+                      current: newCurrent,
+                      isCompleted: newCurrent >= weeklyChallenge.target,
+                      users: updatedUsers,
+                    })
+                  }
+                },
+              )
+
+              await Promise.all(updatePromises)
+            }
+
+            // 4. Затем удаляем одноразовую задачу
+            if (challenge.isSingleUse && updatedIsCompleted) {
               await remove(challengeRef)
             }
 
