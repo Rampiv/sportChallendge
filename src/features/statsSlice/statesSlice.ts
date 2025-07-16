@@ -41,52 +41,32 @@ export const fetchUserRankings = createAsyncThunk(
       const usersSnapshot = await get(ref(database, "users"))
       const users = usersSnapshot.exists() ? usersSnapshot.val() : {}
 
-      // 2. Получаем данные daily challenges
-      const dailyChallengesSnapshot = await get(ref(database, "dailyChallenges"))
-      const dailyChallenges = dailyChallengesSnapshot.exists()
-        ? dailyChallengesSnapshot.val()
-        : {}
-
-      // 3. Создаем массив для рейтинга
+      // 2. Создаем массив для рейтинга
       const rankings: UserRanking[] = []
 
-      // 4. Обрабатываем каждого пользователя
+      // 3. Обрабатываем каждого пользователя
       for (const userId in users) {
-        let completed = 0
+        const user = users[userId]
+        
+        // Получаем количество выполненных задач
+        // Если completedTasks undefined, считаем 0
+        const completedChallenges =
+          typeof user.completedTasks === "number" ? user.completedTasks : 0
 
-        // 4.1. Считаем выполненные задачи из dailyChallenges
-        if (dailyChallenges[userId]) {
-          for (const challengeId in dailyChallenges[userId]) {
-            const challenge = dailyChallenges[userId][challengeId]
-            if (challenge.countCompleted) {
-              completed += challenge.countCompleted
-            }
-          }
-        }
-
-        // 4.2. Считаем выполненные одноразовые задачи из completedTasks
-        const completedTasksSnapshot = await get(
-          ref(database, `users/${userId}/completedTasks`)
-        )
-        if (completedTasksSnapshot.exists()) {
-          completed += Object.keys(completedTasksSnapshot.val()).length
-        }
-
-        // 4.3. Получаем имя пользователя
-        const userName = users[userId]?.displayName || `User ${userId.slice(0, 6)}`
+        const userName = user?.displayName || `User ${userId.slice(0, 6)}`
 
         rankings.push({
           userId,
           userName,
-          completedChallenges: completed,
+          completedChallenges,
           rank: 0, // Временное значение
         })
       }
 
-      // 5. Сортируем по количеству выполненных заданий
+      // 4. Сортируем по количеству выполненных заданий
       rankings.sort((a, b) => b.completedChallenges - a.completedChallenges)
 
-      // 6. Добавляем правильные ранги
+      // 5. Добавляем правильные ранги
       return rankings.map((user, index) => ({
         ...user,
         rank: index + 1,
@@ -95,7 +75,7 @@ export const fetchUserRankings = createAsyncThunk(
       console.error("Error fetching rankings:", error)
       return rejectWithValue("Failed to fetch user rankings")
     }
-  }
+  },
 )
 
 export const fetchUserStreak = createAsyncThunk(
